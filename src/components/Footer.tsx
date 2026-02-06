@@ -9,7 +9,7 @@ export function Footer() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-2">
-            <Logo className="h-8 mb-4" />
+            <Logo className="h-9 mb-4 bg-white rounded-xl shadow-md px-3 py-1" />
             <p className="text-muted-foreground max-w-md">
               Ecossistema de Inteligência Macroeconômica para Decisão Financeira. 
               Transformamos indicadores econômicos em estratégias claras para suas decisões de capital.
@@ -17,7 +17,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-semibold mb-4">Navegação</h4>
+            <h4 className="font-semibold mb-4 text-foreground">Navegação</h4>
             <ul className="space-y-2">
               <li>
                 <Link to="/" className="text-muted-foreground hover:text-foreground transition-colors">
@@ -43,7 +43,7 @@ export function Footer() {
           </div>
 
           <div>
-            <h4 className="font-semibold mb-4">Legal</h4>
+            <h4 className="font-semibold mb-4 text-foreground">Legal</h4>
             <ul className="space-y-2">
               <li>
                 <a href="#" className="text-muted-foreground hover:text-foreground transition-colors">

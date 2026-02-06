@@ -200,7 +200,7 @@ export default function Home() {
           {/* Chart Section */}
           <div className="mt-12">
             <div className="flex flex-col sm:flex-row justify-between items-start sm:items-center gap-4 mb-6">
-              <h3 className="text-xl font-semibold">Série Temporal dos Indicadores</h3>
+              <h3 className="text-xl font-semibold text-foreground">Série Temporal dos Indicadores</h3>
               <div className="flex gap-2">
                 {(Object.keys(PERIOD_LABELS) as SelectedPeriod[]).map((period) => (
                   <Button
@@ -237,7 +237,7 @@ export default function Home() {
                 <div className="p-3 rounded-lg bg-chart-selic/20 w-fit mb-4">
                   <TrendingUp className="h-6 w-6 text-chart-selic" />
                 </div>
-                <h3 className="font-semibold mb-2">Taxa Selic</h3>
+                <h3 className="font-semibold mb-2 text-foreground">Taxa Selic</h3>
                 <p className="text-sm text-muted-foreground">
                   A taxa básica de juros influencia diretamente o custo do crédito e a
                   rentabilidade de investimentos em renda fixa.
@@ -248,7 +248,7 @@ export default function Home() {
                 <div className="p-3 rounded-lg bg-chart-ipca/20 w-fit mb-4">
                   <BarChart3 className="h-6 w-6 text-chart-ipca" />
                 </div>
-                <h3 className="font-semibold mb-2">IPCA (Inflação)</h3>
+                <h3 className="font-semibold mb-2 text-foreground">IPCA (Inflação)</h3>
                 <p className="text-sm text-muted-foreground">
                   Mede a variação de preços e impacta o poder de compra. Inflação alta corrói o
                   valor do dinheiro ao longo do tempo.
@@ -259,7 +259,7 @@ export default function Home() {
                 <div className="p-3 rounded-lg bg-chart-pib/20 w-fit mb-4">
                   <Zap className="h-6 w-6 text-chart-pib" />
                 </div>
-                <h3 className="font-semibold mb-2">Crescimento do PIB</h3>
+                <h3 className="font-semibold mb-2 text-foreground">Crescimento do PIB</h3>
                 <p className="text-sm text-muted-foreground">
                   Indica a saúde da economia. Crescimento forte pode gerar mais oportunidades, mas
                   também pressão inflacionária.
@@ -268,7 +268,7 @@ export default function Home() {
             </div>
 
             <div className="mt-8 p-6 rounded-xl bg-card border border-border">
-              <h4 className="font-semibold mb-3">Por que isso importa para você?</h4>
+              <h4 className="font-semibold mb-3 text-foreground">Por que isso importa para você?</h4>
               <p className="text-muted-foreground">
                 Quando a Selic sobe, o crédito fica mais caro, mas a renda fixa rende mais. Quando
                 a inflação está alta, o consórcio pode ser mais vantajoso que esperar para comprar à
@@ -300,7 +300,7 @@ export default function Home() {
                   <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
                     {item.step}
                   </div>
-                  <h3 className="font-semibold mb-2 mt-2">{item.title}</h3>
+                  <h3 className="font-semibold mb-2 mt-2 text-foreground">{item.title}</h3>
                   <p className="text-sm text-muted-foreground">{item.description}</p>
                 </div>
                 {index < 3 && (
@@ -335,7 +335,7 @@ export default function Home() {
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
                   <Shield className="h-8 w-8 text-primary" />
                 </div>
-                <h3 className="font-semibold mb-2">Confiança</h3>
+                <h3 className="font-semibold mb-2 text-foreground">Confiança</h3>
                 <p className="text-sm text-muted-foreground">
                   Dados oficiais do Banco Central e IBGE, atualizados regularmente.
                 </p>
@@ -345,7 +345,7 @@ export default function Home() {
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
                   <Lightbulb className="h-8 w-8 text-primary" />
                 </div>
-                <h3 className="font-semibold mb-2">Clareza</h3>
+                <h3 className="font-semibold mb-2 text-foreground">Clareza</h3>
                 <p className="text-sm text-muted-foreground">
                   Explicações simples e diretas para cada recomendação apresentada.
                 </p>
@@ -355,7 +355,7 @@ export default function Home() {
                 <div className="w-16 h-16 mx-auto mb-4 rounded-full bg-primary/10 flex items-center justify-center">
                   <Target className="h-8 w-8 text-primary" />
                 </div>
-                <h3 className="font-semibold mb-2">Estratégia</h3>
+                <h3 className="font-semibold mb-2 text-foreground">Estratégia</h3>
                 <p className="text-sm text-muted-foreground">
                   Análise baseada em cenário real para decisões mais assertivas.
                 </p>
@@ -363,7 +363,7 @@ export default function Home() {
             </div>
 
             <div className="bg-card rounded-xl p-8 border border-border text-center">
-              <h4 className="font-semibold text-lg mb-3">Importante</h4>
+              <h4 className="font-semibold text-lg mb-3 text-foreground">Importante</h4>
               <p className="text-muted-foreground">
                 A CAPITALYS é uma plataforma de apoio à decisão e não realiza contratação direta de
                 produtos financeiros. Ao manifestar interesse em uma estratégia, seus dados podem ser
