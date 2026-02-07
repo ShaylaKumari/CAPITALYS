@@ -35,7 +35,7 @@ export default function Auth() {
       <div className="w-full max-w-md">
         <div className="bg-card rounded-2xl border border-border p-8 shadow-xl">
           <div className="text-center mb-8">
-            <Logo className="h-12 mx-auto mb-6 rounded-xl bg-white px-3 py-1 shadow-md" />
+            <Logo className="h-12 mx-auto mb-6" />
             <h1 className="text-2xl font-bold mb-2 text-foreground">Bem-vindo</h1>
             <p className="text-muted-foreground">
               Acesse sua conta para criar e gerenciar seus objetivos financeiros

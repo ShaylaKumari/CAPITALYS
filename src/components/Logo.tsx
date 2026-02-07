@@ -1,4 +1,4 @@
-import logoCapitalys from "@/assets/logo-capitalys.png";
+import logoCapitalys from "@/assets/logo-capitalys-main (2).png";
 
 interface LogoProps {
   className?: string;

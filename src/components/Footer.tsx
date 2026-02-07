@@ -9,7 +9,7 @@ export function Footer() {
       <div className="container mx-auto px-4 py-12">
         <div className="grid grid-cols-1 md:grid-cols-4 gap-8">
           <div className="col-span-1 md:col-span-2">
-            <Logo className="h-9 mb-4 bg-white rounded-xl shadow-md px-3 py-1" />
+            <Logo className="h-9 mb-4" />
             <p className="text-muted-foreground max-w-md">
               Ecossistema de Inteligência Macroeconômica para Decisão Financeira. 
               Transformamos indicadores econômicos em estratégias claras para suas decisões de capital.

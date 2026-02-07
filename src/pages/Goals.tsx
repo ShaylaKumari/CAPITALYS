@@ -98,7 +98,7 @@ export default function Goals() {
           {/* Header */}
           <div className="flex items-center justify-between mb-8">
             <div>
-              <h1 className="text-3xl font-bold mb-2">Meus Objetivos</h1>
+              <h1 className="text-3xl font-bold mb-2 text-foreground">Meus Objetivos</h1>
               <p className="text-muted-foreground">
                 Gerencie e acompanhe seus objetivos financeiros
               </p>
@@ -113,7 +113,7 @@ export default function Goals() {
           {goals.length === 0 ? (
             <div className="bg-card rounded-xl border border-border p-12 text-center">
               <Target className="h-16 w-16 text-muted-foreground mx-auto mb-4" />
-              <h3 className="text-xl font-semibold mb-2">Nenhum objetivo cadastrado</h3>
+              <h3 className="text-xl font-semibold mb-2 text-foreground">Nenhum objetivo cadastrado</h3>
               <p className="text-muted-foreground mb-6 max-w-md mx-auto">
                 Crie seu primeiro objetivo financeiro e receba uma análise comparativa entre as
                 melhores estratégias para o cenário econômico atual.

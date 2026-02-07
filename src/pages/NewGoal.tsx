@@ -268,7 +268,7 @@ export default function NewGoal() {
           {!result ? (
             <>
               <div className="mb-8">
-                <h1 className="text-3xl font-bold mb-2">Criar Objetivo Financeiro</h1>
+                <h1 className="text-3xl font-bold mb-2 text-foreground">Criar Objetivo Financeiro</h1>
                 <p className="text-muted-foreground">
                   Informe os detalhes do seu objetivo e receba uma análise personalizada
                 </p>
@@ -277,7 +277,7 @@ export default function NewGoal() {
               <form onSubmit={handleSubmit} className="bg-card rounded-xl border border-border p-8">
                 <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
                   <div className="md:col-span-2">
-                    <Label htmlFor="asset_type">Tipo de Bem / Objetivo</Label>
+                    <Label htmlFor="asset_type" className="text-foreground">Tipo de Bem / Objetivo</Label>
                     <Input
                       id="asset_type"
                       placeholder="Ex: Automóvel, Imóvel, Viagem..."
@@ -288,7 +288,7 @@ export default function NewGoal() {
                   </div>
 
                   <div>
-                    <Label htmlFor="estimated_value">Valor Estimado (R$)</Label>
+                    <Label htmlFor="estimated_value" className="text-foreground">Valor Estimado (R$)</Label>
                     <Input
                       id="estimated_value"
                       type="number"
@@ -300,7 +300,7 @@ export default function NewGoal() {
                   </div>
 
                   <div>
-                    <Label htmlFor="available_capital">Capital Disponível (R$)</Label>
+                    <Label htmlFor="available_capital" className="text-foreground">Capital Disponível (R$)</Label>
                     <Input
                       id="available_capital"
                       type="number"
@@ -312,7 +312,7 @@ export default function NewGoal() {
                   </div>
 
                   <div>
-                    <Label htmlFor="desired_term">Prazo Desejado (meses)</Label>
+                    <Label htmlFor="desired_term" className="text-foreground">Prazo Desejado (meses)</Label>
                     <Input
                       id="desired_term"
                       type="number"
@@ -324,7 +324,7 @@ export default function NewGoal() {
                   </div>
 
                   <div>
-                    <Label htmlFor="urgency_level">Nível de Urgência</Label>
+                    <Label htmlFor="urgency_level" className="text-foreground">Nível de Urgência</Label>
                     <Select
                       value={form.urgency_level}
                       onValueChange={(value: any) => updateField("urgency_level", value)}

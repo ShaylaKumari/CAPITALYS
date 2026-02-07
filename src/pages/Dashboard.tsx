@@ -106,7 +106,7 @@ export default function Dashboard() {
         <div className="container mx-auto px-4">
           {/* Welcome Section */}
           <div className="mb-8">
-            <h1 className="text-3xl font-bold mb-2">
+            <h1 className="text-3xl font-bold mb-2 text-foreground">
               {getGreeting()}, {profile?.full_name?.split(" ")[0] || ""}!
             </h1>
             <p className="text-muted-foreground">
@@ -143,7 +143,7 @@ export default function Dashboard() {
                 <p className="text-sm font-medium text-muted-foreground">Objetivos Ativos</p>
                 <Target className="h-5 w-5 text-primary" />
               </div>
-              <p className="stat-value">{goals.length}</p>
+              <p className="stat-value text-foreground">{goals.length}</p>
               <Link
                 to="/objetivos"
                 className="text-sm text-primary hover:underline mt-2 inline-flex items-center gap-1"
@@ -157,8 +157,8 @@ export default function Dashboard() {
                 <p className="text-sm font-medium text-muted-foreground">Taxa Selic Atual</p>
                 <TrendingUp className="h-5 w-5 text-chart-selic" />
               </div>
-              <p className="stat-value">{selicValue?.toFixed(2) ?? "--"}%</p>
-              <p className="text-sm text-muted-foreground mt-2">a.a.</p>
+              <p className="stat-value text-foreground">{selicValue?.toFixed(2) ?? "--"}%</p>
+              <p className="text-sm text-primary mt-2">a.a.</p>
             </div>
 
             <div
@@ -169,15 +169,15 @@ export default function Dashboard() {
                 <p className="text-sm font-medium text-muted-foreground">Criar Objetivo</p>
                 <Plus className="h-5 w-5 text-primary" />
               </div>
-              <p className="text-lg font-semibold text-primary">Novo objetivo</p>
-              <p className="text-sm text-muted-foreground mt-2">Clique para começar</p>
+              <p className="text-lg font-semibold text-foreground">Novo objetivo</p>
+              <p className="text-sm text-primary mt-2">Clique para começar</p>
             </div>
           </div>
 
           {/* Recent Goals */}
           <div className="bg-card rounded-xl border border-border p-6">
             <div className="flex items-center justify-between mb-6">
-              <h2 className="text-xl font-semibold">Seus Objetivos Recentes</h2>
+              <h2 className="text-xl font-semibold text-foreground">Seus Objetivos Recentes</h2>
               <Button variant="outline" size="sm" asChild>
                 <Link to="/objetivos">Ver todos</Link>
               </Button>
@@ -186,7 +186,7 @@ export default function Dashboard() {
             {goals.length === 0 ? (
               <div className="text-center py-12">
                 <Target className="h-12 w-12 text-muted-foreground mx-auto mb-4" />
-                <h3 className="font-semibold mb-2">Nenhum objetivo ainda</h3>
+                <h3 className="font-semibold mb-2 text-foreground">Nenhum objetivo ainda</h3>
                 <p className="text-muted-foreground mb-4">
                   Crie seu primeiro objetivo financeiro para receber recomendações personalizadas
                 </p>

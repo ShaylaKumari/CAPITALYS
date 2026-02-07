@@ -41,7 +41,7 @@ export function Header() {
       <div className="container mx-auto px-4">
         <div className="flex h-16 items-center justify-between">
           <Link to="/" className="flex items-center">
-            <div className="flex items-center rounded-xl bg-white px-3 py-1 shadow-md">
+            <div className="flex items-center rounded-xl">
               <Logo className="h-8" />
             </div>
           </Link>

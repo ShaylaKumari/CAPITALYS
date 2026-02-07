@@ -297,15 +297,9 @@ export default function Home() {
                   <div className="relative inline-flex items-center justify-center w-16 h-16 rounded-full bg-primary/10 mb-4">
                     <item.icon className="h-8 w-8 text-primary" />
                   </div>
-                  <div className="absolute -top-2 left-1/2 -translate-x-1/2 w-8 h-8 rounded-full bg-primary text-primary-foreground flex items-center justify-center text-sm font-bold">
-                    {item.step}
-                  </div>
                   <h3 className="font-semibold mb-2 mt-2 text-foreground">{item.title}</h3>
                   <p className="text-sm text-muted-foreground">{item.description}</p>
                 </div>
-                {index < 3 && (
-                  <div className="hidden md:block absolute top-8 left-[60%] w-[80%] h-0.5 bg-border" />
-                )}
               </div>
             ))}
           </div>
