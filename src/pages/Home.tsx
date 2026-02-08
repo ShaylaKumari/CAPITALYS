@@ -58,20 +58,6 @@ const PERIOD_LABELS: Record<SelectedPeriod, string> = {
   "60": "5 anos",
 };
 
-function getLatestByType(items: IndicatorAnalysis[]): IndicatorAnalysis[] {
-  const latest = items.reduce(
-    (acc, item) => {
-      const existing = acc[item.indicator_type];
-      if (!existing || new Date(item.created_at) > new Date(existing.created_at)) {
-        acc[item.indicator_type] = item;
-      }
-      return acc;
-    },
-    {} as Record<string, IndicatorAnalysis>,
-  );
-  return Object.values(latest);
-}
-
 export default function Home() {
   const navigate = useNavigate();
   const { user } = useAuth();
@@ -79,7 +65,10 @@ export default function Home() {
   const [historicalData, setHistoricalData] = useState<EconomicIndicator[]>([]);
   const [insight, setInsight] = useState<Insight | null>(null);
   const [selectedPeriod, setSelectedPeriod] = useState<SelectedPeriod>("12");
-  const [loading, setLoading] = useState(true);
+  const [cardsLoading, setCardsLoading] = useState(true);
+  const [chartLoading, setChartLoading] = useState(true);
+  const [insightLoading, setInsightLoading] = useState(true);
+
 
   useEffect(() => {
     fetchData();
@@ -87,15 +76,40 @@ export default function Home() {
 
   const fetchData = async () => {
     try {
-      const [analysisResult, historicalResult, insightResult] = await Promise.all([
-        supabase
-          .from("indicator_analysis")
-          .select("*")
-          .order("created_at", { ascending: false }),
+      // 1) Cards (view) - rápido, prioriza UI
+      setCardsLoading(true);
+
+      const latestCards = await supabase
+        .from("view_latest_indicator_analysis")
+        .select("*");
+
+      console.log("view_latest_indicator_analysis:", {
+        count: latestCards.data?.length,
+        error: latestCards.error,
+        sample: latestCards.data?.[0],
+      });
+
+      if (latestCards.error) {
+        console.error("Cards error:", latestCards.error);
+        setIndicators([]); // garante estado
+      } else {
+        setIndicators(latestCards.data as IndicatorAnalysis[]);
+      }
+    } finally {
+      setCardsLoading(false);
+    }
+
+    // 2) O resto pode carregar em paralelo ou sequencial (eu gosto paralelo)
+    try {
+      setChartLoading(true);
+      setInsightLoading(true);
+
+      const [historicalResult, insightResult] = await Promise.all([
         supabase
           .from("economic_indicators")
           .select("*")
           .order("reference_date", { ascending: true }),
+
         supabase
           .from("insights")
           .select("*")
@@ -104,21 +118,23 @@ export default function Home() {
           .maybeSingle(),
       ]);
 
-      if (analysisResult.data) {
-        setIndicators(getLatestByType(analysisResult.data as IndicatorAnalysis[]));
-      }
-      if (historicalResult.data) {
+      if (historicalResult.error) {
+        console.error("Historical error:", historicalResult.error);
+      } else {
         setHistoricalData(historicalResult.data as EconomicIndicator[]);
       }
-      if (insightResult.data) {
-        setInsight(insightResult.data as Insight);
+
+      if (insightResult.error) {
+        console.error("Insight error:", insightResult.error);
+      } else {
+        setInsight((insightResult.data as Insight) ?? null);
       }
-    } catch (error) {
-      console.error("Error fetching data:", error);
     } finally {
-      setLoading(false);
+      setChartLoading(false);
+      setInsightLoading(false);
     }
   };
+
 
   const handleGetStarted = () => {
     navigate(user ? "/novo-objetivo" : "/auth");
@@ -164,38 +180,41 @@ export default function Home() {
             </p>
           </div>
 
-          {loading ? (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {[1, 2, 3].map((i) => (
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
+            {indicators.length > 0 ? (
+              indicators.map((indicator) => (
+                <IndicatorCard key={indicator.id} indicator={indicator} />
+              ))
+            ) : (
+              [1, 2, 3].map((i) => (
                 <div key={i} className="indicator-card animate-pulse">
                   <div className="h-4 bg-muted rounded w-24 mb-4" />
                   <div className="h-10 bg-muted rounded w-32 mb-2" />
                   <div className="h-4 bg-muted rounded w-20" />
                 </div>
-              ))}
-            </div>
-          ) : (
-            <div className="grid grid-cols-1 md:grid-cols-3 gap-6">
-              {indicators.map((indicator) => (
-                <IndicatorCard key={indicator.id} indicator={indicator} />
-              ))}
-            </div>
-          )}
+              ))
+            )}
+          </div>
 
           {/* Insight Card */}
           {insight && (
-            <div className="mt-8 p-6 rounded-xl bg-primary/10 border border-primary/20">
+            <div className="mt-8 p-6 rounded-xl bg-card border border-primary/20">
               <div className="flex items-start gap-4">
                 <div className="p-3 rounded-lg bg-primary/20">
                   <Lightbulb className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <h3 className="font-semibold text-lg mb-2">{insight.scenario_label}</h3>
-                  <p className="text-muted-foreground">{insight.insight_text}</p>
+                  <h3 className="font-semibold text-lg mb-2 text-foreground">
+                    Cenário {insight.scenario_label.charAt(0).toUpperCase() + insight.scenario_label.slice(1)}
+                  </h3>
+                  <p className="text-muted-foreground">
+                    {insight.insight_text}
+                  </p>
                 </div>
               </div>
             </div>
           )}
+
 
           {/* Chart Section */}
           <div className="mt-12">

@@ -113,7 +113,7 @@ export const INDICATOR_NAMES: Record<string, string> = {
 };
 
 export const INDICATOR_UNITS: Record<string, string> = {
-  selic: '% a.a.',
+  selic: '%',
   ipca: '%',
   pib_crescimento: '%',
 };

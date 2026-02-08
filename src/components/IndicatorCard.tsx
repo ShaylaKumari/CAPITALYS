@@ -64,7 +64,7 @@ export function IndicatorCard({ indicator, className }: IndicatorCardProps) {
 
       <div className="flex items-baseline gap-2">
         <span className="stat-value text-foreground">
-          {indicator.current_value.toFixed(2)}
+          {indicator.current_value.toFixed(2).replace(".", ",")}
         </span>
         <span className="text-lg text-muted-foreground">
           {INDICATOR_UNITS[indicator.indicator_type]}
