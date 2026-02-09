@@ -55,15 +55,16 @@ export function Header() {
     <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
       <div className="container mx-auto px-4">
         <div className="grid h-16 grid-cols-3 items-center">
-          {/* ESQUERDA */}
           <div className="justify-self-start">
-            {/* ✅ Sempre mostra a logo (logada ou não) */}
-            <Link to={user ? "/dashboard" : "/"} className="flex items-center">
-              <div className="flex items-center rounded-xl">
-                <Logo className="h-8" />
-              </div>
-            </Link>
+            {!user && (
+              <Link to="/" className="flex items-center">
+                <div className="flex items-center rounded-xl">
+                  <Logo className="h-9" />
+                </div>
+              </Link>
+            )}
           </div>
+
 
           {/* CENTRO */}
           <div className="justify-self-center">

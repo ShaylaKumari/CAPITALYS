@@ -134,10 +134,10 @@ export default function Dashboard() {
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-semibold text-foreground">Cenário</h3>
-                    <span className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary">
+                    <h3 className="font-semibold text-foreground">Cenário {insight.scenario_label.charAt(0).toUpperCase() + insight.scenario_label.slice(1)}</h3>
+                    {/* <span className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary">
                       {insight.scenario_label}
-                    </span>
+                    </span> */}
                   </div>
                   <p className="text-muted-foreground">
                     {insight.scenario_summary || insight.insight_text}
