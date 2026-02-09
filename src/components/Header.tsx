@@ -1,4 +1,4 @@
-import { Link, useNavigate } from "react-router-dom";
+import { Link, useNavigate, useLocation } from "react-router-dom";
 import { Button } from "@/components/ui/button";
 import { Logo } from "@/components/Logo";
 import { useAuth } from "@/hooks/useAuth";
@@ -21,15 +21,17 @@ function getInitials(fullName: string | null | undefined, email: string | undefi
       .toUpperCase()
       .slice(0, 2);
   }
-  if (email) {
-    return email[0].toUpperCase();
-  }
+  if (email) return email[0].toUpperCase();
   return "U";
 }
 
 export function Header() {
   const { user, signOut } = useAuth();
   const navigate = useNavigate();
+  const { pathname } = useLocation();
+
+  // ✅ Landing pages onde você quer manter logo + nav mesmo logada
+  const isLanding = pathname === "/";
 
   const meta = (user?.user_metadata ?? {}) as {
     full_name?: string;
@@ -55,18 +57,18 @@ export function Header() {
         <div className="grid h-16 grid-cols-3 items-center">
           {/* ESQUERDA */}
           <div className="justify-self-start">
-            {!user && (
-              <Link to="/" className="flex items-center">
-                <div className="flex items-center rounded-xl">
-                  <Logo className="h-8" />
-                </div>
-              </Link>
-            )}
+            {/* ✅ Sempre mostra a logo (logada ou não) */}
+            <Link to={user ? "/dashboard" : "/"} className="flex items-center">
+              <div className="flex items-center rounded-xl">
+                <Logo className="h-8" />
+              </div>
+            </Link>
           </div>
 
           {/* CENTRO */}
           <div className="justify-self-center">
-            {!user && (
+            {/* ✅ Nav da landing aparece quando estiver no / */}
+            {isLanding ? (
               <nav className="hidden md:flex items-center gap-6">
                 <a
                   href="#indicadores"
@@ -87,6 +89,9 @@ export function Header() {
                   Sobre
                 </a>
               </nav>
+            ) : (
+              // ✅ Fora do / você pode deixar vazio (ou colocar nav do app)
+              <div className="hidden md:block" />
             )}
           </div>
 
