@@ -28,12 +28,25 @@ function getInitials(fullName: string | null | undefined, email: string | undefi
 }
 
 export function Header() {
-  const { user, profile, signOut } = useAuth();
+  const { user, signOut } = useAuth();
   const navigate = useNavigate();
 
+  const meta = (user?.user_metadata ?? {}) as {
+    full_name?: string;
+    name?: string;
+    avatar_url?: string;
+    picture?: string;
+  };
+
+  const fullName = meta.full_name || meta.name || "";
+  const avatarUrl = meta.avatar_url || meta.picture || "";
+
   const handleSignOut = async () => {
-    await signOut();
-    navigate("/");
+    try {
+      await signOut();
+    } finally {
+      navigate("/", { replace: true });
+    }
   };
 
   return (
@@ -98,12 +111,9 @@ export function Header() {
                 <DropdownMenuTrigger asChild>
                   <Button variant="ghost" className="relative h-10 w-10 rounded-full">
                     <Avatar className="h-10 w-10">
-                      <AvatarImage
-                        src={profile?.avatar_url || undefined}
-                        alt={profile?.full_name || ""}
-                      />
+                      <AvatarImage src={avatarUrl || undefined} alt={fullName} />
                       <AvatarFallback className="bg-primary text-primary-foreground">
-                        {getInitials(profile?.full_name, user.email)}
+                        {getInitials(fullName, user.email)}
                       </AvatarFallback>
                     </Avatar>
                   </Button>
@@ -111,8 +121,8 @@ export function Header() {
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      {profile?.full_name && (
-                        <p className="font-medium">{profile.full_name}</p>
+                      {fullName && (
+                        <p className="font-medium">{fullName}</p>
                       )}
                       <p className="text-sm text-muted-foreground">{user.email}</p>
                     </div>

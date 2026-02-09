@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useEffect, useMemo, useState } from "react";
 import { useNavigate, Link } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -31,70 +31,83 @@ function getLatestByType(items: IndicatorAnalysis[]): IndicatorAnalysis[] {
 }
 
 export default function Dashboard() {
+  const { user, loading: authLoading } = useAuth();
   const navigate = useNavigate();
-  const { user, profile, loading: authLoading } = useAuth();
+
   const [goals, setGoals] = useState<FinancialGoal[]>([]);
   const [insight, setInsight] = useState<Insight | null>(null);
   const [indicators, setIndicators] = useState<IndicatorAnalysis[]>([]);
-  const [loading, setLoading] = useState(true);
+  const [pageLoading, setPageLoading] = useState(true);
 
-  useEffect(() => {
-    if (!authLoading && !user) {
-      navigate("/auth");
-    }
-  }, [user, authLoading, navigate]);
-
-  useEffect(() => {
-    if (user) {
-      fetchDashboardData();
-    }
+  // nome do Google (sem depender de tabela users/profile)
+  const firstName = useMemo(() => {
+    const meta: any = user?.user_metadata ?? {};
+    const full = (meta.full_name || meta.name || user?.email || "") as string;
+    return full.split(" ")[0] || "";
   }, [user]);
 
-  const fetchDashboardData = async () => {
-    try {
-      const [goalsResult, insightResult, indicatorsResult] = await Promise.all([
-        supabase
-          .from("financial_goals")
-          .select("*")
-          .eq("user_id", user!.id)
-          .eq("is_active", true)
-          .order("created_at", { ascending: false })
-          .limit(5),
-        supabase
-          .from("insights")
-          .select("*")
-          .order("created_at", { ascending: false })
-          .limit(1)
-          .maybeSingle(),
-        supabase
-          .from("indicator_analysis")
-          .select("*")
-          .order("created_at", { ascending: false }),
-      ]);
-
-      if (goalsResult.data) {
-        setGoals(goalsResult.data as FinancialGoal[]);
-      }
-      if (insightResult.data) {
-        setInsight(insightResult.data as Insight);
-      }
-      if (indicatorsResult.data) {
-        setIndicators(getLatestByType(indicatorsResult.data as IndicatorAnalysis[]));
-      }
-    } catch (error) {
-      console.error("Error fetching dashboard data:", error);
-    } finally {
-      setLoading(false);
+  // guard: se não estiver logado, manda pro auth
+  useEffect(() => {
+    if (!authLoading && !user) {
+      navigate("/auth", { replace: true });
     }
-  };
+  }, [authLoading, user, navigate]);
 
-  if (authLoading || loading) {
+  // carrega dados do dashboard quando tiver user
+  useEffect(() => {
+    const fetchDashboardData = async () => {
+      if (!user) return;
+
+      setPageLoading(true);
+      try {
+        const [goalsResult, insightResult, indicatorsResult] = await Promise.all([
+          supabase
+            .from("financial_goals")
+            .select("*")
+            .eq("user_id", user.id)
+            .eq("is_active", true)
+            .order("created_at", { ascending: false })
+            .limit(5),
+
+          supabase
+            .from("insights")
+            .select("*")
+            .order("created_at", { ascending: false })
+            .limit(1)
+            .maybeSingle(),
+
+          supabase
+            .from("indicator_analysis")
+            .select("*")
+            .order("created_at", { ascending: false }),
+        ]);
+
+        if (goalsResult.data) setGoals(goalsResult.data as FinancialGoal[]);
+        if (insightResult.data) setInsight(insightResult.data as Insight);
+        if (indicatorsResult.data) {
+          setIndicators(getLatestByType(indicatorsResult.data as IndicatorAnalysis[]));
+        }
+      } catch (error) {
+        console.error("Error fetching dashboard data:", error);
+      } finally {
+        setPageLoading(false);
+      }
+    };
+
+    fetchDashboardData();
+  }, [user]);
+
+  // loader geral (auth + dados)
+  if (authLoading || pageLoading) {
     return (
       <div className="min-h-screen bg-background dark flex items-center justify-center">
         <Loader2 className="h-8 w-8 animate-spin text-primary" />
       </div>
     );
   }
+
+  // ainda sem user? não renderiza (useEffect já redireciona)
+  if (!user) return null;
 
   const selicValue = indicators.find((i) => i.indicator_type === "selic")?.current_value;
 
@@ -107,23 +120,21 @@ export default function Dashboard() {
           {/* Welcome Section */}
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2 text-foreground">
-              {getGreeting()}, {profile?.full_name?.split(" ")[0] || ""}!
+              {getGreeting()}, {firstName}!
             </h1>
-            <p className="text-muted-foreground">
-              Aqui está um resumo do seu painel financeiro
-            </p>
+            <p className="text-muted-foreground">Aqui está um resumo do seu painel financeiro</p>
           </div>
 
           {/* Insight Card */}
           {insight && (
-            <div className="mb-8 p-6 rounded-xl bg-primary/10 border border-primary/20">
+            <div className="mb-8 p-6 rounded-xl bg-card border border-primary/20">
               <div className="flex items-start gap-4">
                 <div className="p-3 rounded-lg bg-primary/20">
                   <Lightbulb className="h-6 w-6 text-primary" />
                 </div>
                 <div className="flex-1">
                   <div className="flex items-center gap-2 mb-2">
-                    <h3 className="font-semibold">Insight do Cenário</h3>
+                    <h3 className="font-semibold text-foreground">Cenário</h3>
                     <span className="text-xs px-2 py-1 rounded-full bg-primary/20 text-primary">
                       {insight.scenario_label}
                     </span>
@@ -157,8 +168,11 @@ export default function Dashboard() {
                 <p className="text-sm font-medium text-muted-foreground">Taxa Selic Atual</p>
                 <TrendingUp className="h-5 w-5 text-chart-selic" />
               </div>
-              <p className="stat-value text-foreground">{selicValue?.toFixed(2) ?? "--"}%</p>
-              <p className="text-sm text-primary mt-2">a.a.</p>
+              <p className="stat-value text-foreground">
+                {selicValue != null ? selicValue.toFixed(2).replace(".", ",") : "--"}%
+              </p>
+              {/* se você NÃO quer "a.a." aqui, remova a linha abaixo */}
+              {/* <p className="text-sm text-primary mt-2">a.a.</p> */}
             </div>
 
             <div
