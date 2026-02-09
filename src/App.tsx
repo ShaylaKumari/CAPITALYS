@@ -4,6 +4,7 @@ import { TooltipProvider } from "@/components/ui/tooltip";
 import { QueryClient, QueryClientProvider } from "@tanstack/react-query";
 import { BrowserRouter, Routes, Route } from "react-router-dom";
 import { AuthProvider } from "@/hooks/useAuth";
+import DashboardLayout from "@/components/DashboardLayout";
 import Home from "./pages/Home";
 import Auth from "./pages/Auth";
 import Dashboard from "./pages/Dashboard";
@@ -12,6 +13,7 @@ import NewGoal from "./pages/NewGoal";
 import GoalDetail from "./pages/GoalDetail";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+
 
 // Preview pages (UI only, no auth)
 import PreviewLayout from "./pages/preview/PreviewLayout";
@@ -33,11 +35,14 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/auth" element={<Auth />} />
-            <Route path="/dashboard" element={<Dashboard />} />
-            <Route path="/objetivos" element={<Goals />} />
-            <Route path="/novo-objetivo" element={<NewGoal />} />
-            <Route path="/objetivo/:id" element={<GoalDetail />} />
-            <Route path="/perfil" element={<Profile />} />
+
+            <Route element={<DashboardLayout />}>
+              <Route path="/dashboard" element={<Dashboard />} />
+              <Route path="/objetivos" element={<Goals />} />
+              <Route path="/novo-objetivo" element={<NewGoal />} />
+              <Route path="/objetivo/:id" element={<GoalDetail />} />
+              <Route path="/perfil" element={<Profile />} />
+            </Route>
             
             {/* Preview routes (UI only, no authentication) */}
             <Route path="/preview" element={<PreviewLayout />}>

@@ -52,37 +52,22 @@ export function Header() {
   return (
     <header className="fixed top-0 left-0 right-0 z-50 glass border-b border-border/50">
       <div className="container mx-auto px-4">
-        <div className="flex h-16 items-center justify-between">
-          <Link to="/" className="flex items-center">
-            <div className="flex items-center rounded-xl">
-              <Logo className="h-8" />
-            </div>
-          </Link>
+        <div className="grid h-16 grid-cols-3 items-center">
+          {/* ESQUERDA */}
+          <div className="justify-self-start">
+            {!user && (
+              <Link to="/" className="flex items-center">
+                <div className="flex items-center rounded-xl">
+                  <Logo className="h-8" />
+                </div>
+              </Link>
+            )}
+          </div>
 
-          <nav className="hidden md:flex items-center gap-6">
-            {user ? (
-              <>
-                <Link
-                  to="/dashboard"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Dashboard
-                </Link>
-                <Link
-                  to="/objetivos"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Meus Objetivos
-                </Link>
-                <Link
-                  to="/novo-objetivo"
-                  className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
-                >
-                  Criar Objetivo
-                </Link>
-              </>
-            ) : (
-              <>
+          {/* CENTRO */}
+          <div className="justify-self-center">
+            {!user && (
+              <nav className="hidden md:flex items-center gap-6">
                 <a
                   href="#indicadores"
                   className="text-sm font-medium text-muted-foreground hover:text-foreground transition-colors"
@@ -101,11 +86,12 @@ export function Header() {
                 >
                   Sobre
                 </a>
-              </>
+              </nav>
             )}
-          </nav>
+          </div>
 
-          <div className="flex items-center gap-4">
+          {/* DIREITA */}
+          <div className="justify-self-end">
             {user ? (
               <DropdownMenu>
                 <DropdownMenuTrigger asChild>
@@ -118,16 +104,17 @@ export function Header() {
                     </Avatar>
                   </Button>
                 </DropdownMenuTrigger>
+
                 <DropdownMenuContent className="w-56" align="end" forceMount>
                   <div className="flex items-center justify-start gap-2 p-2">
                     <div className="flex flex-col space-y-1 leading-none">
-                      {fullName && (
-                        <p className="font-medium">{fullName}</p>
-                      )}
+                      {fullName && <p className="font-medium">{fullName}</p>}
                       <p className="text-sm text-muted-foreground">{user.email}</p>
                     </div>
                   </div>
+
                   <DropdownMenuSeparator />
+
                   <DropdownMenuItem onClick={() => navigate("/dashboard")}>
                     <LayoutDashboard className="mr-2 h-4 w-4" />
                     Dashboard
@@ -140,7 +127,9 @@ export function Header() {
                     <User className="mr-2 h-4 w-4" />
                     Meu Perfil
                   </DropdownMenuItem>
+
                   <DropdownMenuSeparator />
+
                   <DropdownMenuItem onClick={handleSignOut}>
                     <LogOut className="mr-2 h-4 w-4" />
                     Sair

@@ -115,7 +115,7 @@ export default function Dashboard() {
     <div className="min-h-screen bg-background dark">
       <Header />
 
-      <main className="pt-24 pb-12">
+      <main className="pb-12">
         <div className="container mx-auto px-4">
           {/* Welcome Section */}
           <div className="mb-8">
@@ -171,8 +171,6 @@ export default function Dashboard() {
               <p className="stat-value text-foreground">
                 {selicValue != null ? selicValue.toFixed(2).replace(".", ",") : "--"}%
               </p>
-              {/* se você NÃO quer "a.a." aqui, remova a linha abaixo */}
-              {/* <p className="text-sm text-primary mt-2">a.a.</p> */}
             </div>
 
             <div
