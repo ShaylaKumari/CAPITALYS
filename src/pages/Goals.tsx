@@ -148,20 +148,20 @@ export default function Goals() {
                     )}
                   </div>
 
-                  <h3 className="font-semibold text-lg mb-2">{goal.asset_type}</h3>
+                  <h3 className="font-semibold text-lg mb-2 text-foreground">{goal.asset_type.charAt(0).toUpperCase() + goal.asset_type.slice(1)}</h3>
 
                   <div className="space-y-2 mb-4">
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Valor</span>
-                      <span className="font-medium">{formatCurrency(goal.estimated_value)}</span>
+                      <span className="font-medium text-foreground">{formatCurrency(goal.estimated_value)}</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Prazo</span>
-                      <span className="font-medium">{goal.desired_term} meses</span>
+                      <span className="font-medium text-foreground">{goal.desired_term} meses</span>
                     </div>
                     <div className="flex justify-between text-sm">
                       <span className="text-muted-foreground">Urgência</span>
-                      <span className="font-medium">{URGENCY_LABELS[goal.urgency_level]}</span>
+                      <span className="font-medium text-foreground">{URGENCY_LABELS[goal.urgency_level]}</span>
                     </div>
                   </div>
 

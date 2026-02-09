@@ -9,11 +9,11 @@ import { formatCurrency, formatDate, getGreeting } from "@/lib/format";
 import {
   Target,
   Plus,
-  TrendingUp,
   Lightbulb,
   ArrowRight,
   Clock,
   Loader2,
+  User
 } from "lucide-react";
 
 function getLatestByType(items: IndicatorAnalysis[]): IndicatorAnalysis[] {
@@ -163,13 +163,23 @@ export default function Dashboard() {
               </Link>
             </div>
 
-            <div className="indicator-card">
+            <div
+              className="indicator-card cursor-pointer hover:border-primary/50 transition"
+              onClick={() => navigate("/perfil")}
+            >
               <div className="flex items-center justify-between mb-4">
-                <p className="text-sm font-medium text-muted-foreground">Taxa Selic Atual</p>
-                <TrendingUp className="h-5 w-5 text-chart-selic" />
+                <p className="text-sm font-medium text-muted-foreground">
+                  Meu Perfil
+                </p>
+                <User className="h-5 w-5 text-primary" />
               </div>
-              <p className="stat-value text-foreground">
-                {selicValue != null ? selicValue.toFixed(2).replace(".", ",") : "--"}%
+
+              <p className="text-lg font-semibold text-foreground">
+                Perfil financeiro
+              </p>
+
+              <p className="text-sm text-primary mt-2">
+                Ver e editar informações
               </p>
             </div>
 
@@ -220,7 +230,7 @@ export default function Dashboard() {
                         <Target className="h-5 w-5 text-primary" />
                       </div>
                       <div>
-                        <p className="font-medium">{goal.asset_type}</p>
+                        <p className="font-medium text-foreground">{goal.asset_type.charAt(0).toUpperCase() + goal.asset_type.slice(1)}</p>
                         <p className="text-sm text-muted-foreground">
                           {formatCurrency(goal.estimated_value)} • {goal.desired_term} meses
                         </p>

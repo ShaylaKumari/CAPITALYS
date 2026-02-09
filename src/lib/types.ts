@@ -40,10 +40,9 @@ export interface UserFinancialProfile {
   user_id: string;
   income_range: string | null;
   credit_status: string | null;
-  risk_profile: 'conservador' | 'moderado' | 'arrojado' | null;
-  income_stability: 'estavel' | 'variavel' | 'incerto' | null;
+  risk_profile: 'conservador' | 'moderado' | 'agressivo' | null;
+  income_stability: 'clt' | 'autonomo' | 'pj' | 'nao_informado' | null;
   dependents: number;
-  profession: string | null;
   created_at: string;
   updated_at: string;
 }
@@ -55,7 +54,7 @@ export interface FinancialGoal {
   estimated_value: number;
   available_capital: number;
   desired_term: number;
-  urgency_level: 'baixa' | 'media' | 'alta' | 'urgente';
+  urgency_level: 'baixa' | 'media' | 'alta' | null;
   is_active: boolean;
   created_at: string;
   updated_at: string;
@@ -101,7 +100,7 @@ export interface CreateGoalForm {
   estimated_value: number;
   available_capital: number;
   desired_term: number;
-  urgency_level: 'baixa' | 'media' | 'alta' | 'urgente';
+  urgency_level: 'baixa' | 'media' | 'alta' | null;
 }
 
 // Indicator display names
@@ -121,23 +120,23 @@ export const URGENCY_LABELS: Record<string, string> = {
   baixa: 'Baixa',
   media: 'Média',
   alta: 'Alta',
-  urgente: 'Urgente',
 };
 
 export const RISK_PROFILE_LABELS: Record<string, string> = {
   conservador: 'Conservador',
   moderado: 'Moderado',
-  arrojado: 'Arrojado',
+  agressivo: 'Agressivo',
 };
 
 export const INCOME_STABILITY_LABELS: Record<string, string> = {
-  estavel: 'Estável',
-  variavel: 'Variável',
-  incerto: 'Incerto',
+  clt: 'CLT',
+  autonomo: 'Autônomo',
+  pj: 'PJ',
+  nao_informado: 'Prefiro não informar',
 };
 
 export const STRATEGY_LABELS: Record<string, string> = {
-  credito: 'Crédito',
+  emprestimo: 'Empréstimo',
   consorcio: 'Consórcio',
   renda_fixa: 'Renda Fixa',
 };

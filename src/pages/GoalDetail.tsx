@@ -17,8 +17,35 @@ import {
   AlertCircle,
 } from "lucide-react";
 
-function getStrategyLabel(tipo: string): string {
-  return STRATEGY_LABELS[tipo] || tipo;
+const STRATEGY_BULLETS: Record<string, string[]> = {
+  "Empréstimo": [
+    "Aquisição imediata do bem",
+    "Previsibilidade das parcelas",
+    "Possibilidade de quitação antecipada",
+  ],
+  "Consórcio": [
+    "Sem juros, apenas taxa administrativa",
+    "Parcelas menores",
+    "Disciplina financeira",
+  ],
+  "Investimento": [
+    "Menor custo total",
+    "Sem dívidas",
+    "Rendimento sobre capital",
+  ],
+};
+
+// fallback caso venha variação (ex: "Crédito")
+function getStrategyBullets(tipo: string) {
+  if (STRATEGY_BULLETS[tipo]) return STRATEGY_BULLETS[tipo];
+
+  const normalized = (tipo || "").toLowerCase();
+  if (normalized.includes("emprest") || normalized.includes("créd") || normalized.includes("credit"))
+    return STRATEGY_BULLETS["Empréstimo"];
+  if (normalized.includes("consor")) return STRATEGY_BULLETS["Consórcio"];
+  if (normalized.includes("invest")) return STRATEGY_BULLETS["Investimento"];
+
+  return [];
 }
 
 export default function GoalDetail() {
@@ -118,7 +145,7 @@ export default function GoalDetail() {
           {/* Back Button */}
           <Button
             variant="ghost"
-            className="mb-6"
+            className="mb-6 text-muted-foreground"
             onClick={() => navigate("/objetivos")}
           >
             <ArrowLeft className="h-4 w-4 mr-2" />
@@ -133,7 +160,7 @@ export default function GoalDetail() {
                   <Target className="h-6 w-6 text-primary" />
                 </div>
                 <div>
-                  <h1 className="text-2xl font-bold">{goal.asset_type}</h1>
+                  <h1 className="text-2xl font-bold text-foreground"> {goal.asset_type.charAt(0).toUpperCase() + goal.asset_type.slice(1)}</h1>
                   <p className="text-muted-foreground">
                     Criado em {formatDate(goal.created_at)}
                   </p>
@@ -155,19 +182,19 @@ export default function GoalDetail() {
             <div className="grid grid-cols-2 md:grid-cols-4 gap-6">
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Valor estimado</p>
-                <p className="text-lg font-semibold">{formatCurrency(goal.estimated_value)}</p>
+                <p className="text-lg font-semibold text-foreground">{formatCurrency(goal.estimated_value)}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Capital disponível</p>
-                <p className="text-lg font-semibold">{formatCurrency(goal.available_capital)}</p>
+                <p className="text-lg font-semibold text-foreground">{formatCurrency(goal.available_capital)}</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Prazo desejado</p>
-                <p className="text-lg font-semibold">{goal.desired_term} meses</p>
+                <p className="text-lg font-semibold text-foreground">{goal.desired_term} meses</p>
               </div>
               <div>
                 <p className="text-sm text-muted-foreground mb-1">Urgência</p>
-                <p className="text-lg font-semibold">{URGENCY_LABELS[goal.urgency_level]}</p>
+                <p className="text-lg font-semibold text-foreground">{URGENCY_LABELS[goal.urgency_level]}</p>
               </div>
             </div>
           </div>
@@ -175,10 +202,10 @@ export default function GoalDetail() {
           {/* Decision Result */}
           {decision && (
             <div className="mb-8">
-              <h2 className="text-xl font-semibold mb-4">Resultado da Análise</h2>
+              <h2 className="text-xl font-semibold mb-4 text-foreground">Resultado da Análise</h2>
 
-              <div className="bg-primary/10 rounded-xl border border-primary/20 p-6 mb-6">
-                <h3 className="font-semibold text-lg mb-2">{decision.explanation_title}</h3>
+              <div className="bg-card rounded-xl border border-primary/20 p-6 mb-6">
+                <h3 className="font-semibold text-lg mb-2 text-foreground">{decision.explanation_title}</h3>
                 <p className="text-muted-foreground">{decision.explanation}</p>
                 <p className="text-xs text-muted-foreground mt-4">
                   Análise realizada em {formatDate(decision.analysis_date)}
@@ -186,49 +213,70 @@ export default function GoalDetail() {
               </div>
 
               <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
-                {decision.ranking.map((strategy, index) => (
-                  <div
-                    key={strategy.tipo}
-                    className={`rounded-xl border p-5 ${
-                      index === 0
-                        ? "border-primary bg-primary/5"
-                        : "border-border bg-card"
-                    }`}
-                  >
-                    <div className="flex items-center justify-between mb-3">
-                      <span className="text-sm font-medium text-muted-foreground">
-                        #{index + 1}
-                      </span>
-                      {index === 0 && (
-                        <span className="text-xs px-2 py-1 rounded-full bg-primary text-primary-foreground">
-                          Recomendado
+                {decision.ranking.map((strategy, index) => {
+                  const tipo = strategy.tipo ?? "";
+                  const bullets = getStrategyBullets(tipo);
+
+                  return (
+                    <div
+                      key={`${tipo}-${index}`}
+                      className={`rounded-xl border p-5 ${
+                        index === 0 ? "border-primary bg-primary/5" : "border-border bg-card"
+                      }`}
+                    >
+                      <div className="flex items-center justify-between mb-3">
+                        <span className="text-sm font-medium text-muted-foreground">
+                          #{index + 1}
                         </span>
+                        {index === 0 && (
+                          <span className="text-xs px-2 py-1 rounded-full bg-primary text-primary-foreground">
+                            Recomendado
+                          </span>
+                        )}
+                      </div>
+
+                      <h4 className="font-semibold mb-3 text-foreground">{tipo}</h4>
+
+                      <div className="space-y-2 text-sm mb-4">
+                        <div className="flex justify-between">
+                          <span className="text-foreground">Custo total</span>
+                          <span className="font-medium text-muted-foreground">
+                            {strategy.custoTotal ?? "-"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-foreground">Parcela</span>
+                          <span className="font-medium text-muted-foreground">
+                            {strategy.parcelaMensal ? `${strategy.parcelaMensal}/mês` : "-"}
+                          </span>
+                        </div>
+                        <div className="flex justify-between">
+                          <span className="text-foreground">Tempo</span>
+                          <span className="font-medium text-muted-foreground">
+                            {strategy.tempoParaConquista ?? "-"}
+                          </span>
+                        </div>
+                      </div>
+
+                      {/* ✅ Bullets estáticos dentro do card */}
+                      {bullets.length > 0 && (
+                        <div className="border-t border-border pt-4">
+                          <p className="text-xs text-foreground mb-2">Destaques:</p>
+                          <ul className="space-y-1 text-muted-foreground">
+                            {bullets.map((text, i) => (
+                              <li key={i} className="text-xs flex items-start gap-2">
+                                <CheckCircle className="h-3 w-3 text-success mt-0.5 flex-shrink-0" />
+                                <span>{text}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
                       )}
                     </div>
-
-                    <h4 className="font-semibold mb-3">{strategy.nome}</h4>
-
-                    <div className="space-y-2 text-sm">
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Custo total</span>
-                        <span className="font-medium">
-                          {formatCurrency(strategy.custo_total)}
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Parcela</span>
-                        <span className="font-medium">
-                          {formatCurrency(strategy.parcela_mensal)}/mês
-                        </span>
-                      </div>
-                      <div className="flex justify-between">
-                        <span className="text-muted-foreground">Tempo</span>
-                        <span className="font-medium">{strategy.tempo_meses} meses</span>
-                      </div>
-                    </div>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
+
             </div>
           )}
 
@@ -236,7 +284,7 @@ export default function GoalDetail() {
           <div className="bg-card rounded-xl border border-border p-6">
             <div className="flex items-center gap-2 mb-6">
               <History className="h-5 w-5 text-muted-foreground" />
-              <h2 className="text-xl font-semibold">Histórico de Alterações</h2>
+              <h2 className="text-xl font-semibold text-foreground">Histórico de Alterações</h2>
             </div>
 
             {history.length === 0 ? (

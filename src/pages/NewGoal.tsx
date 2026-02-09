@@ -1,4 +1,4 @@
-import { useState, useEffect } from "react";
+import { useState, useEffect, useRef, useMemo } from "react";
 import { useNavigate } from "react-router-dom";
 import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
@@ -21,8 +21,7 @@ import {
 } from "@/components/ui/dialog";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
-import type { CreateGoalForm, StrategyRanking } from "@/lib/types";
-import { STRATEGY_LABELS } from "@/lib/types";
+import type { CreateGoalForm } from "@/lib/types";
 import { formatCurrency } from "@/lib/format";
 import {
   Loader2,
@@ -33,65 +32,97 @@ import {
   Clock,
   DollarSign,
   Award,
+  User as UserIcon,
 } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
+import type { RealtimeChannel } from "@supabase/supabase-js";
 
-interface AnalysisResult {
-  recommended_strategy: string;
-  ranking: StrategyRanking[];
+type RankingRowDB = {
+  tipo?: string; // "Consórcio" | "Investimento" | "Empréstimo"
+  custoTotal?: string; // "R$ 55.000,00"
+  parcelaMensal?: string; // "R$ 1.527,78"
+  tempoParaConquista?: string; // "9 a 36 meses" | "Imediato"
+};
+
+type ResultForUI = {
+  id: string;
+  goal_id: string;
+  recommended_strategy: string; // "Consórcio"
+  ranking: RankingRowDB[];
   explanation: string;
-  explanation_title: string;
+  explanation_title: string | null;
+  analysis_date: string;
+  created_at: string;
+};
+
+const ASSET_TYPE_LABELS: Record<string, string> = {
+  imovel: "Imóvel",
+  reforma: "Reforma",
+  veiculo: "Veículo",
+  equipamentos: "Equipamentos",
+  viagem: "Viagem",
+  outros: "Outros",
+};
+
+function getAssetLabel(v: string): string {
+  return ASSET_TYPE_LABELS[v] || v;
 }
 
-function getStrategyLabel(tipo: string): string {
-  return STRATEGY_LABELS[tipo] || tipo;
-}
+export const URGENCY_OPTIONS = [
+  { label: "Alta", value: "alta" },
+  { label: "Média", value: "media" },
+  { label: "Baixa", value: "baixa" },
+] as const;
 
-function buildMockRanking(estimatedValue: number, availableCapital: number, desiredTerm: number): StrategyRanking[] {
-  return [
-    {
-      tipo: "consorcio",
-      nome: "Consórcio",
-      custo_total: estimatedValue * 1.12,
-      parcela_mensal: (estimatedValue * 1.12) / desiredTerm,
-      tempo_meses: desiredTerm,
-      vantagens: [
-        "Sem juros, apenas taxa de administração",
-        "Parcelas mais acessíveis",
-        "Poder de compra à vista após contemplação",
-        "Ideal para quem pode esperar",
-      ],
-      score: 85,
-    },
-    {
-      tipo: "renda_fixa",
-      nome: "Renda Fixa",
-      custo_total: estimatedValue,
-      parcela_mensal: (estimatedValue - availableCapital) / desiredTerm,
-      tempo_meses: Math.ceil(desiredTerm * 0.9),
-      vantagens: [
-        "Rendimento acima da inflação",
-        "Selic alta favorece aplicações",
-        "Compra à vista com desconto",
-        "Segurança e previsibilidade",
-      ],
-      score: 78,
-    },
-    {
-      tipo: "credito",
-      nome: "Crédito",
-      custo_total: estimatedValue * 1.45,
-      parcela_mensal: (estimatedValue * 1.45) / desiredTerm,
-      tempo_meses: desiredTerm,
-      vantagens: [
-        "Acesso imediato ao bem",
-        "Parcelas fixas e previsíveis",
-        "Ideal para urgência alta",
-        "Possibilidade de amortização",
-      ],
-      score: 62,
-    },
-  ];
+const STRATEGY_BULLETS: Record<string, string[]> = {
+  "Empréstimo": [
+    "Aquisição imediata do bem",
+    "Previsibilidade das parcelas",
+    "Possibilidade de quitação antecipada",
+  ],
+  "Consórcio": ["Sem juros, apenas taxa administrativa", "Parcelas menores", "Disciplina financeira"],
+  "Investimento": ["Menor custo total", "Sem dívidas", "Rendimento sobre capital"],
+};
+
+const getStrategyBullets = (tipo: string) => {
+  if (STRATEGY_BULLETS[tipo]) return STRATEGY_BULLETS[tipo];
+
+  const normalized = (tipo || "").toLowerCase();
+  if (normalized.includes("emprest") || normalized.includes("créd") || normalized.includes("credit"))
+    return STRATEGY_BULLETS["Empréstimo"];
+  if (normalized.includes("consor")) return STRATEGY_BULLETS["Consórcio"];
+  if (normalized.includes("invest")) return STRATEGY_BULLETS["Investimento"];
+
+  return [];
+};
+
+const onlyDigits = (v: string) => v.replace(/\D/g, "");
+const formatBRL = (value: number) => new Intl.NumberFormat("pt-BR").format(value);
+
+function normalizeDecisionResult(raw: any): ResultForUI | null {
+  if (!raw) return null;
+
+  const rankingRaw = raw.ranking;
+
+  const ranking: RankingRowDB[] = Array.isArray(rankingRaw)
+    ? rankingRaw.map((r: any) => ({
+        tipo: r?.tipo ?? "",
+        custoTotal: r?.custoTotal ?? "",
+        parcelaMensal: r?.parcelaMensal ?? "",
+        tempoParaConquista: r?.tempoParaConquista ?? "",
+      }))
+    : [];
+
+  return {
+    id: String(raw.id),
+    goal_id: String(raw.goal_id),
+    recommended_strategy: String(raw.recommended_strategy ?? ""),
+    ranking,
+    explanation: String(raw.explanation ?? ""),
+    explanation_title: raw.explanation_title ?? null,
+    analysis_date: String(raw.analysis_date ?? ""),
+    created_at: String(raw.created_at ?? ""),
+  };
 }
 
 export default function NewGoal() {
@@ -103,16 +134,126 @@ export default function NewGoal() {
     asset_type: "",
     estimated_value: 0,
     available_capital: 0,
-    desired_term: 12,
-    urgency_level: "media",
+    desired_term: 0,
+    urgency_level: null,
   });
 
   const [submitting, setSubmitting] = useState(false);
   const [analyzing, setAnalyzing] = useState(false);
-  const [result, setResult] = useState<AnalysisResult | null>(null);
+  const [result, setResult] = useState<ResultForUI | null>(null);
   const [goalId, setGoalId] = useState<string | null>(null);
   const [showInterestModal, setShowInterestModal] = useState(false);
   const [selectedStrategy, setSelectedStrategy] = useState<string>("");
+
+  // ✅ gate: perfil financeiro
+  const [financialProfile, setFinancialProfile] = useState<{
+    income_range: string | null;
+    credit_status: string | null;
+    risk_profile: string | null;
+    income_stability: string | null;
+  } | null>(null);
+  const [profileGateOpen, setProfileGateOpen] = useState(false);
+
+  const isProfileComplete = useMemo(() => {
+    if (!financialProfile) return false;
+    return (
+      !!financialProfile.income_range &&
+      !!financialProfile.credit_status &&
+      !!financialProfile.risk_profile &&
+      !!financialProfile.income_stability
+    );
+  }, [financialProfile]);
+
+  // ✅ guarda canal pra limpar certinho
+  const channelRef = useRef<RealtimeChannel | null>(null);
+  const fallbackTimerRef = useRef<number | null>(null);
+
+  const fetchFinancialProfile = async () => {
+    if (!user) return;
+
+    const { data, error } = await supabase
+      .from("user_financial_profile")
+      .select("income_range, credit_status, risk_profile, income_stability")
+      .eq("user_id", user.id)
+      .maybeSingle();
+
+    if (error) {
+      console.error("Error fetching financial profile:", error);
+      setFinancialProfile(null);
+      return;
+    }
+
+    setFinancialProfile(data ?? null);
+  };
+
+  const fetchDecisionResult = async (createdGoalId: string) => {
+    const { data, error } = await supabase
+      .from("decision_results")
+      .select("*")
+      .eq("goal_id", createdGoalId)
+      .order("created_at", { ascending: false })
+      .limit(1)
+      .maybeSingle();
+
+    if (error) throw error;
+    return normalizeDecisionResult(data);
+  };
+
+  const cleanupChannel = async () => {
+    if (fallbackTimerRef.current) {
+      window.clearTimeout(fallbackTimerRef.current);
+      fallbackTimerRef.current = null;
+    }
+
+    if (channelRef.current) {
+      try {
+        await supabase.removeChannel(channelRef.current);
+      } catch {
+        // ignore
+      }
+      channelRef.current = null;
+    }
+  };
+
+  // ✅ Real-time: escuta insert/update da decision_results pro goal_id
+  const subscribeToDecisionResult = async (createdGoalId: string) => {
+    await cleanupChannel();
+
+    const channel = supabase
+      .channel(`decision_results_goal_${createdGoalId}`)
+      .on(
+        "postgres_changes",
+        {
+          event: "*",
+          schema: "public",
+          table: "decision_results",
+          filter: `goal_id=eq.${createdGoalId}`,
+        },
+        async () => {
+          try {
+            const dbResult = await fetchDecisionResult(createdGoalId);
+            if (dbResult) {
+              setResult(dbResult);
+              setAnalyzing(false);
+              await cleanupChannel();
+            }
+          } catch (e) {
+            console.error("Realtime fetch error:", e);
+          }
+        }
+      );
+
+    channelRef.current = channel;
+
+    const { error } = await channel.subscribe((status) => {
+      // opcional: debug
+      // console.log("Realtime status:", status);
+    });
+
+    if (error) {
+      console.error("Realtime subscribe error:", error);
+    }
+  };
 
   useEffect(() => {
     if (!authLoading && !user) {
@@ -120,10 +261,89 @@ export default function NewGoal() {
     }
   }, [user, authLoading, navigate]);
 
+  // ✅ carrega perfil para o gate
+  useEffect(() => {
+    if (user) fetchFinancialProfile();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  // ✅ atualiza perfil ao voltar pra janela (usuário pode ter preenchido em outra aba/tela)
+  useEffect(() => {
+    const onFocus = () => fetchFinancialProfile();
+    window.addEventListener("focus", onFocus);
+    return () => window.removeEventListener("focus", onFocus);
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, [user]);
+
+  // ✅ limpeza ao sair da tela
+  useEffect(() => {
+    return () => {
+      cleanupChannel();
+    };
+    // eslint-disable-next-line react-hooks/exhaustive-deps
+  }, []);
+
+  const runAnalysis = async (createdGoalId: string) => {
+    setAnalyzing(true);
+
+    // 1) liga realtime antes (pra não perder o evento)
+    await subscribeToDecisionResult(createdGoalId);
+
+    // 2) tenta buscar imediatamente (caso n8n já tenha gravado)
+    try {
+      const immediate = await fetchDecisionResult(createdGoalId);
+      if (immediate) {
+        setResult(immediate);
+        setAnalyzing(false);
+        await cleanupChannel();
+        return;
+      }
+    } catch (e) {
+      console.error("Immediate fetch error:", e);
+    }
+
+    // 3) fallback: se não chegar evento em 20s, tenta buscar e mostra msg
+    fallbackTimerRef.current = window.setTimeout(async () => {
+      try {
+        const retry = await fetchDecisionResult(createdGoalId);
+        if (retry) {
+          setResult(retry);
+        } else {
+          toast({
+            title: "Análise em processamento",
+            description:
+              "Seu objetivo foi criado, mas a análise ainda não ficou pronta. Aguarde alguns instantes e tente abrir o objetivo novamente.",
+            variant: "destructive",
+          });
+        }
+      } catch (e) {
+        console.error("Fallback fetch error:", e);
+        toast({
+          title: "Erro",
+          description: "Não foi possível carregar o resultado da análise.",
+          variant: "destructive",
+        });
+      } finally {
+        setAnalyzing(false);
+        await cleanupChannel();
+      }
+    }, 20000);
+  };
+
   const handleSubmit = async (e: React.FormEvent) => {
     e.preventDefault();
-
     if (!user) return;
+
+    // ✅ GATE: só cria objetivo com perfil completo
+    if (!isProfileComplete) {
+      setProfileGateOpen(true);
+      toast({
+        title: "Complete seu perfil primeiro",
+        description: "Para criar um objetivo, precisamos do seu perfil financeiro.",
+        variant: "destructive",
+      });
+      return;
+    }
 
     if (!form.asset_type.trim()) {
       toast({ title: "Erro", description: "Informe o tipo de bem", variant: "destructive" });
@@ -131,6 +351,14 @@ export default function NewGoal() {
     }
     if (form.estimated_value <= 0) {
       toast({ title: "Erro", description: "Informe um valor válido", variant: "destructive" });
+      return;
+    }
+    if (!form.desired_term || form.desired_term <= 0) {
+      toast({ title: "Erro", description: "Informe o prazo desejado", variant: "destructive" });
+      return;
+    }
+    if (!form.urgency_level) {
+      toast({ title: "Erro", description: "Informe o nível de urgência", variant: "destructive" });
       return;
     }
 
@@ -154,6 +382,8 @@ export default function NewGoal() {
       if (goalError) throw goalError;
 
       setGoalId(goalData.id);
+
+      // ✅ agora espera realtime
       await runAnalysis(goalData.id);
     } catch (error) {
       console.error("Error creating goal:", error);
@@ -162,40 +392,10 @@ export default function NewGoal() {
         description: "Não foi possível criar o objetivo. Tente novamente.",
         variant: "destructive",
       });
+      setAnalyzing(false);
     } finally {
       setSubmitting(false);
     }
-  };
-
-  const runAnalysis = async (createdGoalId: string) => {
-    // Simulated delay for analysis
-    await new Promise((resolve) => setTimeout(resolve, 2000));
-
-    const ranking = buildMockRanking(form.estimated_value, form.available_capital, form.desired_term);
-
-    const analysisResult: AnalysisResult = {
-      recommended_strategy: "consorcio",
-      explanation_title: "Consórcio é a melhor opção no cenário atual",
-      explanation: `Com a taxa Selic em 13,25% a.a., o custo do crédito está elevado, tornando financiamentos menos atrativos. Para um bem de ${formatCurrency(form.estimated_value)} com prazo de ${form.desired_term} meses, o consórcio oferece menor custo total devido à ausência de juros, sendo a opção mais eficiente no cenário econômico atual.`,
-      ranking,
-    };
-
-    const { error } = await supabase.from("decision_results").insert([
-      {
-        goal_id: createdGoalId,
-        recommended_strategy: analysisResult.recommended_strategy,
-        ranking: JSON.parse(JSON.stringify(analysisResult.ranking)),
-        explanation: analysisResult.explanation,
-        explanation_title: analysisResult.explanation_title,
-      },
-    ]);
-
-    if (error) {
-      console.error("Error saving decision:", error);
-    }
-
-    setResult(analysisResult);
-    setAnalyzing(false);
   };
 
   const handleSaveSimulation = () => {
@@ -266,188 +466,237 @@ export default function NewGoal() {
       <main className="pb-12">
         <div className="container mx-auto px-4 max-w-4xl">
           {!result ? (
-            <>
-              <div className="mb-8">
-                <h1 className="text-3xl font-bold mb-2 text-foreground">Criar Objetivo Financeiro</h1>
-                <p className="text-muted-foreground">
-                  Informe os detalhes do seu objetivo e receba uma análise personalizada
-                </p>
+            analyzing ? (
+              <div className="bg-card rounded-xl border border-border p-10 flex items-center justify-center gap-3">
+                <Loader2 className="h-5 w-5 animate-spin text-primary" />
+                <span className="text-muted-foreground">Gerando análise...</span>
               </div>
-
-              <form onSubmit={handleSubmit} className="bg-card rounded-xl border border-border p-8">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
-                  <div className="md:col-span-2">
-                    <Label htmlFor="asset_type" className="text-foreground">Tipo de Bem / Objetivo</Label>
-                    <Input
-                      id="asset_type"
-                      placeholder="Ex: Automóvel, Imóvel, Viagem..."
-                      value={form.asset_type}
-                      onChange={(e) => updateField("asset_type", e.target.value)}
-                      className="mt-2"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="estimated_value" className="text-foreground">Valor Estimado (R$)</Label>
-                    <Input
-                      id="estimated_value"
-                      type="number"
-                      placeholder="0,00"
-                      value={form.estimated_value || ""}
-                      onChange={(e) => updateField("estimated_value", parseFloat(e.target.value) || 0)}
-                      className="mt-2"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="available_capital" className="text-foreground">Capital Disponível (R$)</Label>
-                    <Input
-                      id="available_capital"
-                      type="number"
-                      placeholder="0,00"
-                      value={form.available_capital || ""}
-                      onChange={(e) => updateField("available_capital", parseFloat(e.target.value) || 0)}
-                      className="mt-2"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="desired_term" className="text-foreground">Prazo Desejado (meses)</Label>
-                    <Input
-                      id="desired_term"
-                      type="number"
-                      placeholder="12"
-                      value={form.desired_term || ""}
-                      onChange={(e) => updateField("desired_term", parseInt(e.target.value) || 12)}
-                      className="mt-2"
-                    />
-                  </div>
-
-                  <div>
-                    <Label htmlFor="urgency_level" className="text-foreground">Nível de Urgência</Label>
-                    <Select
-                      value={form.urgency_level}
-                      onValueChange={(value: any) => updateField("urgency_level", value)}
-                    >
-                      <SelectTrigger className="mt-2">
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        <SelectItem value="baixa">Baixa - Posso esperar</SelectItem>
-                        <SelectItem value="media">Média - Em alguns meses</SelectItem>
-                        <SelectItem value="alta">Alta - Preciso em breve</SelectItem>
-                        <SelectItem value="urgente">Urgente - Preciso agora</SelectItem>
-                      </SelectContent>
-                    </Select>
-                  </div>
+            ) : (
+              <>
+                <div className="mb-8">
+                  <h1 className="text-3xl font-bold mb-2 text-foreground">Criar Objetivo Financeiro</h1>
+                  <p className="text-muted-foreground">
+                    Informe os detalhes do seu objetivo e receba uma análise personalizada
+                  </p>
                 </div>
 
-                <div className="flex justify-end gap-4 mt-8">
-                  <Button type="button" variant="outline" onClick={() => navigate(-1)}>
-                    Cancelar
-                  </Button>
-                  <Button type="submit" variant="hero" disabled={submitting}>
-                    {submitting ? (
-                      <>
-                        <Loader2 className="h-4 w-4 animate-spin mr-2" />
-                        Analisando...
-                      </>
-                    ) : (
-                      <>
-                        <Target className="h-4 w-4 mr-2" />
-                        Analisar Objetivo
-                      </>
-                    )}
-                  </Button>
-                </div>
-              </form>
-            </>
+                <form onSubmit={handleSubmit} className="bg-card rounded-xl border border-border p-8">
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-6">
+                    <div className="md:col-span-2">
+                      <Label htmlFor="asset_type" className="text-foreground">
+                        Tipo de Bem / Objetivo
+                      </Label>
+
+                      <Select value={form.asset_type} onValueChange={(value) => updateField("asset_type", value)}>
+                        <SelectTrigger className="mt-2 text-muted-foreground">
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="imovel">Imóvel</SelectItem>
+                          <SelectItem value="reforma">Reforma</SelectItem>
+                          <SelectItem value="veiculo">Veículo</SelectItem>
+                          <SelectItem value="equipamentos">Equipamentos</SelectItem>
+                          <SelectItem value="viagem">Viagem</SelectItem>
+                          <SelectItem value="outros">Outros</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="estimated_value" className="text-foreground">
+                        Valor Estimado (R$)
+                      </Label>
+
+                      <Input
+                        id="estimated_value"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        placeholder="0"
+                        value={form.estimated_value ? formatBRL(form.estimated_value) : ""}
+                        onChange={(e) => {
+                          const digits = onlyDigits(e.target.value);
+                          const value = digits ? Number(digits) : 0;
+                          updateField("estimated_value", value);
+                        }}
+                        className="mt-2 text-muted-foreground"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="available_capital" className="text-foreground">
+                        Capital Disponível (R$)
+                      </Label>
+
+                      <Input
+                        id="available_capital"
+                        inputMode="numeric"
+                        autoComplete="off"
+                        placeholder="0"
+                        value={form.available_capital ? formatBRL(form.available_capital) : ""}
+                        onChange={(e) => {
+                          const digits = onlyDigits(e.target.value);
+                          const value = digits ? Number(digits) : 0;
+                          updateField("available_capital", value);
+                        }}
+                        className="mt-2 text-muted-foreground"
+                      />
+                    </div>
+
+                    <div>
+                      <Label htmlFor="desired_term" className="text-foreground">
+                        Prazo Desejado
+                      </Label>
+
+                      <Select
+                        value={form.desired_term ? String(form.desired_term) : ""}
+                        onValueChange={(value) => updateField("desired_term", Number(value))}
+                      >
+                        <SelectTrigger className="mt-2 text-muted-foreground">
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          {[6, 12, 18, 24, 36, 48, 60, 72, 84, 96, 120].map((m) => (
+                            <SelectItem key={m} value={String(m)}>
+                              {m} meses
+                            </SelectItem>
+                          ))}
+                        </SelectContent>
+                      </Select>
+                    </div>
+
+                    <div>
+                      <Label htmlFor="urgency_level" className="text-foreground">
+                        Nível de Urgência
+                      </Label>
+
+                      <Select
+                        value={form.urgency_level ?? ""}
+                        onValueChange={(value) => updateField("urgency_level", value as CreateGoalForm["urgency_level"])}
+                      >
+                        <SelectTrigger className="mt-2 text-muted-foreground">
+                          <SelectValue placeholder="Selecione" />
+                        </SelectTrigger>
+                        <SelectContent>
+                          <SelectItem value="alta">Alta</SelectItem>
+                          <SelectItem value="media">Média</SelectItem>
+                          <SelectItem value="baixa">Baixa</SelectItem>
+                        </SelectContent>
+                      </Select>
+                    </div>
+                  </div>
+
+                  <div className="flex justify-end gap-4 mt-8">
+                    <Button type="button" variant="outline" onClick={() => navigate(-1)}>
+                      Cancelar
+                    </Button>
+                    <Button type="submit" variant="hero" disabled={submitting}>
+                      {submitting ? (
+                        <>
+                          <Loader2 className="h-4 w-4 animate-spin mr-2" />
+                          Analisando...
+                        </>
+                      ) : (
+                        <>
+                          <Target className="h-4 w-4 mr-2" />
+                          Analisar Objetivo
+                        </>
+                      )}
+                    </Button>
+                  </div>
+                </form>
+              </>
+            )
           ) : (
             <>
-              {/* Analysis Result */}
               <div className="mb-8">
                 <div className="flex items-center gap-2 text-primary mb-2">
                   <CheckCircle className="h-5 w-5" />
                   <span className="font-medium">Análise concluída</span>
                 </div>
-                <h1 className="text-3xl font-bold mb-2">{result.explanation_title}</h1>
+
+                <h1 className="text-3xl font-bold mb-2 text-foreground">
+                  {result.recommended_strategy} é a melhor opção no cenário atual
+                </h1>
+
                 <p className="text-muted-foreground">
-                  {form.asset_type} • {formatCurrency(form.estimated_value)}
+                  {getAssetLabel(form.asset_type)} • {formatCurrency(form.estimated_value)}
                 </p>
               </div>
 
-              {/* Strategy Cards */}
               <div className="grid grid-cols-1 md:grid-cols-3 gap-6 mb-8">
-                {result.ranking.map((strategy, index) => (
-                  <div
-                    key={strategy.tipo}
-                    className={`strategy-card ${index === 0 ? "recommended" : ""}`}
-                  >
-                    <div className="flex items-center justify-between mb-4">
-                      <div className="p-2 rounded-lg bg-primary/10">
-                        {index === 0 ? (
-                          <Award className="h-5 w-5 text-primary" />
-                        ) : (
-                          <Target className="h-5 w-5 text-muted-foreground" />
-                        )}
+                {result.ranking.map((strategy, index) => {
+                  const tipo = strategy.tipo ?? "";
+                  const isRecommended = tipo === result.recommended_strategy;
+                  const bullets = getStrategyBullets(tipo);
+
+                  return (
+                    <div key={`${tipo}-${index}`} className={`strategy-card ${isRecommended ? "recommended" : ""}`}>
+                      <div className="flex items-center justify-between mb-4">
+                        <div className="p-2 rounded-lg bg-primary/10">
+                          {isRecommended ? (
+                            <Award className="h-5 w-5 text-primary" />
+                          ) : (
+                            <Target className="h-5 w-5 text-muted-foreground" />
+                          )}
+                        </div>
+                        <span className="text-sm font-medium text-muted-foreground">#{index + 1}</span>
                       </div>
-                      <span className="text-sm font-medium text-muted-foreground">
-                        #{index + 1}
-                      </span>
+
+                      <h3 className="text-xl font-semibold mb-4 text-foreground">{tipo}</h3>
+
+                      <div className="space-y-3 mb-6">
+                        <div className="flex items-center gap-2 text-sm">
+                          <DollarSign className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-foreground">Custo total:</span>
+                          <span className="font-medium text-muted-foreground">{strategy.custoTotal || "-"}</span>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-sm">
+                          <TrendingUp className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-foreground">Parcela:</span>
+                          <span className="font-medium text-muted-foreground">
+                            {strategy.parcelaMensal ? `${strategy.parcelaMensal}/mês` : "-"}
+                          </span>
+                        </div>
+
+                        <div className="flex items-center gap-2 text-sm">
+                          <Clock className="h-4 w-4 text-muted-foreground" />
+                          <span className="text-foreground">Tempo:</span>
+                          <span className="font-medium text-muted-foreground">{strategy.tempoParaConquista || "-"}</span>
+                        </div>
+                      </div>
+
+                      {bullets.length > 0 && (
+                        <div className="border-t border-border pt-4 mb-5">
+                          <p className="text-xs text-foreground mb-2">Vantagens:</p>
+                          <ul className="space-y-1 text-muted-foreground">
+                            {bullets.map((text, i) => (
+                              <li key={i} className="text-xs flex items-start gap-2">
+                                <CheckCircle className="h-3 w-3 text-success mt-0.5 flex-shrink-0" />
+                                <span>{text}</span>
+                              </li>
+                            ))}
+                          </ul>
+                        </div>
+                      )}
+
+                      <Button
+                        variant={isRecommended ? "hero" : "outline"}
+                        className="w-full"
+                        onClick={() => handleConfirmInterest(tipo)}
+                      >
+                        Tenho interesse
+                      </Button>
                     </div>
-
-                    <h3 className="text-xl font-semibold mb-4">{strategy.nome}</h3>
-
-                    <div className="space-y-3 mb-6">
-                      <div className="flex items-center gap-2 text-sm">
-                        <DollarSign className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Custo total:</span>
-                        <span className="font-medium">{formatCurrency(strategy.custo_total)}</span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <TrendingUp className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Parcela:</span>
-                        <span className="font-medium">
-                          {formatCurrency(strategy.parcela_mensal)}/mês
-                        </span>
-                      </div>
-                      <div className="flex items-center gap-2 text-sm">
-                        <Clock className="h-4 w-4 text-muted-foreground" />
-                        <span className="text-muted-foreground">Tempo:</span>
-                        <span className="font-medium">{strategy.tempo_meses} meses</span>
-                      </div>
-                    </div>
-
-                    <div className="border-t border-border pt-4 mb-4">
-                      <p className="text-xs text-muted-foreground mb-2">Vantagens:</p>
-                      <ul className="space-y-1">
-                        {strategy.vantagens.slice(0, 3).map((vantagem, i) => (
-                          <li key={i} className="text-xs flex items-start gap-2">
-                            <CheckCircle className="h-3 w-3 text-success mt-0.5 flex-shrink-0" />
-                            <span>{vantagem}</span>
-                          </li>
-                        ))}
-                      </ul>
-                    </div>
-
-                    <Button
-                      variant={index === 0 ? "hero" : "outline"}
-                      className="w-full"
-                      onClick={() => handleConfirmInterest(strategy.tipo)}
-                    >
-                      Tenho interesse
-                    </Button>
-                  </div>
-                ))}
+                  );
+                })}
               </div>
 
-              {/* Explanation Block */}
               <div className="bg-primary/10 rounded-xl border border-primary/20 p-6 mb-8">
-                <h3 className="font-semibold text-lg mb-3">Justificativa da Análise</h3>
+                <h3 className="font-semibold text-lg mb-3 text-foreground">{result.explanation_title || "Explicação"}</h3>
                 <p className="text-muted-foreground">{result.explanation}</p>
               </div>
 
-              {/* Actions */}
               <div className="flex justify-center gap-4">
                 <Button variant="outline" size="lg" onClick={() => navigate("/objetivos")}>
                   Ver todos objetivos
@@ -472,16 +721,15 @@ export default function NewGoal() {
             </DialogTitle>
             <DialogDescription className="pt-4 space-y-4">
               <p>
-                Um relatório com sua análise será enviado para um{" "}
-                <strong>parceiro financeiro credenciado</strong> da CAPITALYS.
+                Um relatório com sua análise será enviado para um <strong>parceiro financeiro credenciado</strong> da
+                CAPITALYS.
               </p>
               <p>
-                A CAPITALYS <strong>não realiza contratação direta</strong> de produtos financeiros.
-                Somos uma plataforma de apoio à decisão.
+                A CAPITALYS <strong>não realiza contratação direta</strong> de produtos financeiros. Somos uma plataforma
+                de apoio à decisão.
               </p>
               <p>
-                O parceiro poderá entrar em contato para dar continuidade ao processo de{" "}
-                {getStrategyLabel(selectedStrategy)}.
+                O parceiro poderá entrar em contato para dar continuidade ao processo de <strong>{selectedStrategy}</strong>.
               </p>
             </DialogDescription>
           </DialogHeader>
@@ -491,6 +739,41 @@ export default function NewGoal() {
             </Button>
             <Button variant="hero" onClick={handleInterestConfirmed}>
               Confirmar interesse
+            </Button>
+          </DialogFooter>
+        </DialogContent>
+      </Dialog>
+
+      {/* ✅ Profile Gate Modal */}
+      <Dialog open={profileGateOpen} onOpenChange={setProfileGateOpen}>
+        <DialogContent>
+          <DialogHeader>
+            <DialogTitle className="flex items-center gap-2">
+              <UserIcon className="h-5 w-5 text-primary" />
+              Perfil necessário
+            </DialogTitle>
+            <DialogDescription className="pt-4 space-y-3">
+              <p>
+                Para criar um objetivo, você precisa completar seu <strong>perfil financeiro</strong>.
+              </p>
+              <p className="text-sm text-muted-foreground">
+                Isso melhora a qualidade da análise e evita recomendações genéricas.
+              </p>
+            </DialogDescription>
+          </DialogHeader>
+
+          <DialogFooter className="gap-2">
+            <Button variant="outline" onClick={() => setProfileGateOpen(false)}>
+              Agora não
+            </Button>
+            <Button
+              variant="hero"
+              onClick={() => {
+                setProfileGateOpen(false);
+                navigate("/perfil");
+              }}
+            >
+              Ir para meu perfil
             </Button>
           </DialogFooter>
         </DialogContent>
