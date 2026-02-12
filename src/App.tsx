@@ -13,6 +13,8 @@ import NewGoal from "./pages/NewGoal";
 import GoalDetail from "./pages/GoalDetail";
 import Profile from "./pages/Profile";
 import NotFound from "./pages/NotFound";
+import AuthCallback from "./pages/AuthCallback";
+import ProtectedRoute from "@/components/ProtectedRoute";
 
 
 // Preview pages (UI only, no auth)
@@ -35,8 +37,15 @@ const App = () => (
           <Routes>
             <Route path="/" element={<Home />} />
             <Route path="/auth" element={<Auth />} />
+            <Route path="/auth/callback" element={<AuthCallback />} />
 
-            <Route element={<DashboardLayout />}>
+            <Route
+              element={
+                <ProtectedRoute>
+                  <DashboardLayout />
+                </ProtectedRoute>
+              }
+            >
               <Route path="/dashboard" element={<Dashboard />} />
               <Route path="/objetivos" element={<Goals />} />
               <Route path="/novo-objetivo" element={<NewGoal />} />
