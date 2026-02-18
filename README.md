@@ -1,73 +1,169 @@
-# Welcome to your Lovable project
+# 💰 CAPITALYS  
+### Ecossistema de Inteligência Macroeconômica para Decisão Financeira
 
-## Project info
+O **CAPITALYS** é uma plataforma que transforma indicadores macroeconômicos em contexto estratégico para apoiar decisões financeiras individuais.
 
-**URL**: https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID
+O sistema conecta dados econômicos reais a um **motor de decisão inteligente**, gerando análises, insights e recomendações personalizadas para cada perfil de usuário.
 
-## How can I edit this code?
+---
 
-There are several ways of editing your application.
+## 🎯 Problema
 
-**Use Lovable**
+Grande parte das pessoas:
 
-Simply visit the [Lovable Project](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and start prompting.
+- Ouvem falar de **Selic**, **IPCA** e **PIB**
+- Sabem que esses indicadores impactam crédito e investimentos
+- Mas não conseguem traduzir esses dados em decisões práticas
 
-Changes made via Lovable will be committed automatically to this repo.
+O CAPITALYS resolve isso conectando **cenário econômico + perfil do usuário + objetivo financeiro**.
 
-**Use your preferred IDE**
+---
 
-If you want to work locally using your own IDE, you can clone this repo and push changes. Pushed changes will also be reflected in Lovable.
+## 🚀 Proposta de Valor
 
-The only requirement is having Node.js & npm installed - [install with nvm](https://github.com/nvm-sh/nvm#installing-and-updating)
+✔ Monitoramento econômico contínuo  
+✔ Reavaliação automática de estratégias  
+✔ Geração de insights personalizados  
+✔ Motor de decisão com ranking de opções  
+✔ Plataforma escalável e orientada a dados  
 
-Follow these steps:
+---
 
-```sh
-# Step 1: Clone the repository using the project's Git URL.
-git clone <YOUR_GIT_URL>
+## 🧠 Como Funciona
 
-# Step 2: Navigate to the project directory.
-cd <YOUR_PROJECT_NAME>
+### 1️⃣ Coleta de Indicadores Econômicos
+O sistema realiza coleta automatizada de:
 
-# Step 3: Install the necessary dependencies.
-npm i
+- Selic
+- IPCA
+- PIB (crescimento)
 
-# Step 4: Start the development server with auto-reloading and an instant preview.
-npm run dev
-```
+Os dados são armazenados e versionados.
 
-**Edit a file directly in GitHub**
+---
 
-- Navigate to the desired file(s).
-- Click the "Edit" button (pencil icon) at the top right of the file view.
-- Make your changes and commit the changes.
+### 2️⃣ Análise Macroeconômica
+Os indicadores passam por uma camada de análise que identifica:
 
-**Use GitHub Codespaces**
+- Tendência (alta, queda, estabilidade)
+- Variação percentual
+- Impacto potencial no cenário econômico
 
-- Navigate to the main page of your repository.
-- Click on the "Code" button (green button) near the top right.
-- Select the "Codespaces" tab.
-- Click on "New codespace" to launch a new Codespace environment.
-- Edit files directly within the Codespace and commit and push your changes once you're done.
+---
 
-## What technologies are used for this project?
+### 3️⃣ Motor de Decisão Econômica
+O coração do sistema.
 
-This project is built with:
+O motor:
 
-- Vite
-- TypeScript
-- React
-- shadcn-ui
-- Tailwind CSS
+- Cruza o cenário macroeconômico
+- Analisa o perfil financeiro do usuário
+- Avalia objetivos
+- Calcula um ranking de opções
+- Utiliza IA para gerar justificativa contextual
 
-## How can I deploy this project?
+---
 
-Simply open [Lovable](https://lovable.dev/projects/REPLACE_WITH_PROJECT_ID) and click on Share -> Publish.
+### 4️⃣ Monitoramento de Mudança de Cenário
+Caso o cenário econômico mude:
 
-## Can I connect a custom domain to my Lovable project?
+- O sistema reprocessa decisões
+- Atualiza estratégias
+- Notifica o usuário
 
-Yes, you can!
+---
 
-To connect a domain, navigate to Project > Settings > Domains and click Connect Domain.
+## 👤 Perfil do Usuário
 
-Read more here: [Setting up a custom domain](https://docs.lovable.dev/features/custom-domain#custom-domain)
+Cada usuário possui um perfil financeiro contendo:
+
+- Faixa de renda
+- Situação de crédito
+- Perfil de risco (Conservador, Moderado, Agressivo)
+- Estabilidade de renda
+- Dependentes
+
+Essas informações influenciam diretamente no motor de decisão.
+
+---
+
+## 🏗 Arquitetura
+
+### 🔹 Backend & Banco de Dados
+- **Supabase**
+  - Autenticação
+  - Banco PostgreSQL
+  - Armazenamento de indicadores
+  - Tabelas de análises e insights
+  - Perfis financeiros
+
+### 🔹 Automação e Orquestração
+- **n8n**
+  - Coleta automática de indicadores
+  - Processamento de análise macroeconômica
+  - Execução do motor de decisão
+  - Monitoramento de mudança de cenário
+
+### 🔹 Frontend
+- Dashboard interativo
+- Modo Dark (principal)
+- Modo Light (opcional)
+- Interface focada em clareza e contexto estratégico
+
+---
+
+## 🔁 Fluxos Automatizados (n8n)
+
+- **WF01** — Coleta de Indicadores Econômicos  
+- **WF02** — Análise Macroeconômica e Geração de Insights  
+- **WF03** — Motor de Decisão Econômica  
+- **WF04** — Monitoramento e Mudança de Cenário  
+
+---
+
+## 🎨 Interface
+
+A plataforma foi pensada para:
+
+- Reduzir ruído visual  
+- Traduzir dados complexos em contexto  
+- Apresentar decisões de forma clara  
+- Manter coerência visual em modo escuro e claro  
+
+---
+
+## 🏁 Status do Projeto
+
+Projeto desenvolvido como MVP para hackathon / aplicação acadêmica, com foco em:
+
+- Arquitetura escalável  
+- Automação inteligente  
+- Integração real com dados econômicos  
+- Decisão orientada a contexto  
+
+---
+
+## 📌 Próximos Passos
+
+- Implementação de notificações inteligentes  
+- Expansão de indicadores (ex: desemprego, câmbio)  
+- Histórico comparativo de decisões  
+- Sistema de aprendizado adaptativo por perfil  
+
+---
+
+## 👥 Time
+
+Projeto desenvolvido por um time multidisciplinar unindo:
+
+- Produto  
+- Engenharia  
+- Dados  
+- Automação  
+- Experiência do Usuário  
+
+---
+
+## 📜 Licença
+
+Projeto acadêmico
