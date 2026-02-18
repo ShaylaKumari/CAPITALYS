@@ -5,17 +5,10 @@ import { Header } from "@/components/Header";
 import { Button } from "@/components/ui/button";
 import { Input } from "@/components/ui/input";
 import { Label } from "@/components/ui/label";
-import {
-  Select,
-  SelectContent,
-  SelectItem,
-  SelectTrigger,
-  SelectValue,
-} from "@/components/ui/select";
 import { supabase } from "@/integrations/supabase/client";
 import { useAuth } from "@/hooks/useAuth";
 import type { UserFinancialProfile } from "@/lib/types";
-import { INCOME_STABILITY_LABELS, RISK_PROFILE_LABELS } from "@/lib/types";
+import type { IncomeRange, CreditStatus, RiskProfile, IncomeStability } from "@/lib/types";
 import { Loader2, Save, User, Mail, CheckCircle } from "lucide-react";
 import { useToast } from "@/hooks/use-toast";
 import { Avatar, AvatarFallback, AvatarImage } from "@/components/ui/avatar";
@@ -32,30 +25,106 @@ function buildProfilePayload(userId: string, fp: Partial<UserFinancialProfile>) 
   };
 }
 
-const RISK_OPTIONS: Array<NonNullable<UserFinancialProfile["risk_profile"]>> = [
-  "conservador",
-  "moderado",
-  "agressivo",
+const INCOME_RANGE_OPTIONS: Array<{ id: IncomeRange; label: string; description?: string }> = [
+  { id: "ate_2k", label: "Até R$ 2.000" },
+  { id: "2k_4k", label: "R$ 2.000 – R$ 4.000" },
+  { id: "4k_6k", label: "R$ 4.000 – R$ 6.000" },
+  { id: "6k_8k", label: "R$ 6.000 – R$ 8.000" },
+  { id: "8k_12k", label: "R$ 8.000 – R$ 12.000" },
+  { id: "acima_12k", label: "Acima de R$ 12.000" },
 ];
 
-const INCOME_STABILITY_OPTIONS: Array<
-  NonNullable<UserFinancialProfile["income_stability"]>
-> = ["clt", "autonomo", "pj", "nao_informado"];
-
-const INCOME_RANGE_OPTIONS = [
-  { value: "ate_2k", label: "Até R$ 2.000" },
-  { value: "2k_4k", label: "R$ 2.000 – R$ 4.000" },
-  { value: "4k_6k", label: "R$ 4.000 – R$ 6.000" },
-  { value: "6k_8k", label: "R$ 6.000 – R$ 8.000" },
-  { value: "8k_12k", label: "R$ 8.000 – R$ 12.000" },
-  { value: "acima_12k", label: "Acima de R$ 12.000" },
+const CREDIT_STATUS_OPTIONS: Array<{ id: CreditStatus; label: string; description: string }> = [
+  { id: "excelente", label: "Excelente", description: "Score acima de 800" },
+  { id: "bom", label: "Bom", description: "Score entre 600 e 800" },
+  { id: "regular", label: "Regular", description: "Score entre 400 e 600" },
+  { id: "baixo", label: "Baixo", description: "Score abaixo de 400" },
 ];
 
-const CREDIT_STATUS_OPTIONS = [
-  { value: "nome_limpo", label: "CPF sem restrição" },
-  { value: "restricao_cpf", label: "CPF com restrição" },
-  { value: "nao_sei", label: "Prefiro não informar" },
+const RISK_PROFILE_OPTIONS: Array<{ id: RiskProfile; label: string; description: string }> = [
+  { id: "conservador", label: "Conservador", description: "Prefiro segurança a rentabilidade" },
+  { id: "moderado", label: "Moderado", description: "Busco equilíbrio entre risco e retorno" },
+  { id: "agressivo", label: "Agressivo", description: "Aceito riscos para maior retorno" },
 ];
+
+const INCOME_SOURCE_OPTIONS: Array<{ id: IncomeStability; label: string; description: string }> = [
+  { id: "clt", label: "CLT", description: "Contrato formal com carteira assinada" },
+  { id: "servidor_publico", label: "Servidor Público", description: "Cargo público com vínculo estatutário" },
+  { id: "pj", label: "PJ", description: "Atua como pessoa jurídica prestando serviços" },
+  { id: "autonomo", label: "Autônomo", description: "Trabalho por conta própria ou comissionado" },
+  { id: "estagio", label: "Estágio", description: "Vínculo temporário voltado à formação profissional" },
+  { id: "nao_informado", label: "Não informado", description: "Prefiro não informar minha fonte de renda" },
+];
+
+type CardOption<T extends string> = {
+  value: T;
+  label: string;
+  description?: string;
+};
+
+function OptionCardsGroup<T extends string>({
+  label,
+  value,
+  options,
+  onChange,
+  columns = "md:grid-cols-2",
+}: {
+  label: string;
+  value: T | "" | null | undefined;
+  options: CardOption<T>[];
+  onChange: (val: T) => void;
+  columns?: string; // ex: "md:grid-cols-3"
+}) {
+  return (
+    <div className="space-y-2">
+      <Label className="text-foreground">{label}</Label>
+
+      <div className={`grid grid-cols-1 ${columns} gap-3`}>
+        {options.map((opt) => {
+          const selected = value === opt.value;
+
+          return (
+            <button
+              key={opt.value}
+              type="button"
+              onClick={() => onChange(opt.value)}
+              className={[
+                "text-left rounded-xl border p-4 transition",
+                "bg-background/40 hover:bg-background/60",
+                "focus:outline-none focus:ring-2 focus:ring-primary/40",
+                selected
+                  ? "border-primary ring-1 ring-primary/30"
+                  : "border-border",
+              ].join(" ")}
+              aria-pressed={selected}
+            >
+              <div className="flex items-start justify-between gap-3">
+                <div>
+                  <div className="font-semibold text-foreground">
+                    {opt.label}
+                  </div>
+                  {opt.description ? (
+                    <div className="mt-1 text-sm text-muted-foreground">
+                      {opt.description}
+                    </div>
+                  ) : null}
+                </div>
+
+                {selected ? (
+                  <div className="mt-0.5 shrink-0 rounded-full bg-primary/15 p-1">
+                    <CheckCircle className="h-4 w-4 text-primary" />
+                  </div>
+                ) : (
+                  <div className="mt-0.5 shrink-0 h-6 w-6 rounded-full border border-border" />
+                )}
+              </div>
+            </button>
+          );
+        })}
+      </div>
+    </div>
+  );
+}
 
 export default function Profile() {
   const navigate = useNavigate();
@@ -216,7 +285,7 @@ export default function Profile() {
       <Header />
 
       <main className="pb-12">
-        <div className="container mx-auto px-4 max-w-3xl">
+        <div className="container mx-auto px-4 max-w-5xl">
           <div className="mb-8">
             <h1 className="text-3xl font-bold mb-2 text-foreground">Meu Perfil</h1>
             <p className="text-muted-foreground">
@@ -246,103 +315,60 @@ export default function Profile() {
 
             <div className="space-y-6">
               <div>
-                <h3 className="text-lg font-semibold mb-4 flex items-center gap-2 text-foreground">
+                <h3 className="text-2xl font-semibold mb-4 flex items-center gap-2 text-foreground">
                   <User className="h-5 w-5 text-primary" />
                   Perfil Financeiro
                 </h3>
 
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div className="space-y-2">
-                    <Label className="text-foreground">Faixa de renda mensal</Label>
-                    <Select
-                      value={financialProfile.income_range ?? ""}
-                      onValueChange={(value) =>
-                        updateField("income_range", value || null)
-                      }
-                    >
-                      <SelectTrigger className="text-muted-foreground">
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {INCOME_RANGE_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                <div className="space-y-6">
+                  <OptionCardsGroup<IncomeRangeId>
+                    label="Faixa de renda"
+                    value={financialProfile.income_range as IncomeRangeId | "" | null}
+                    options={INCOME_RANGE_OPTIONS.map((o) => ({
+                      value: o.id,
+                      label: o.label,
+                    }))}
+                    onChange={(val) => updateField("income_range", val as any)}
+                    columns="md:grid-cols-3"
+                  />
 
-                  <div className="space-y-2">
-                    <Label className="text-foreground">Situação de crédito</Label>
-                    <Select
-                      value={financialProfile.credit_status ?? ""}
-                      onValueChange={(value) =>
-                        updateField("credit_status", value || null)
-                      }
-                    >
-                      <SelectTrigger className="text-muted-foreground">
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {CREDIT_STATUS_OPTIONS.map((opt) => (
-                          <SelectItem key={opt.value} value={opt.value}>
-                            {opt.label}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <OptionCardsGroup<CreditStatusId>
+                    label="Situação de Crédito"
+                    value={financialProfile.credit_status as CreditStatusId | "" | null}
+                    options={CREDIT_STATUS_OPTIONS.map((o) => ({
+                      value: o.id,
+                      label: o.label,
+                      description: o.description,
+                    }))}
+                    onChange={(val) => updateField("credit_status", val as any)}
+                    columns="md:grid-cols-2"
+                  />
 
-                  <div className="space-y-2">
-                    <Label className="text-foreground">Perfil de risco</Label>
-                    <Select
-                      value={financialProfile.risk_profile ?? ""}
-                      onValueChange={(value) =>
-                        updateField(
-                          "risk_profile",
-                          (value || null) as UserFinancialProfile["risk_profile"],
-                        )
-                      }
-                    >
-                      <SelectTrigger className="text-muted-foreground">
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {RISK_OPTIONS.map((opt) => (
-                          <SelectItem key={opt} value={opt}>
-                            {RISK_PROFILE_LABELS[opt]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <OptionCardsGroup<RiskProfileId>
+                    label="Perfil de Risco"
+                    value={financialProfile.risk_profile as RiskProfileId | "" | null}
+                    options={RISK_PROFILE_OPTIONS.map((o) => ({
+                      value: o.id,
+                      label: o.label,
+                      description: o.description,
+                    }))}
+                    onChange={(val) => updateField("risk_profile", val as any)}
+                    columns="md:grid-cols-3"
+                  />
 
-                  <div className="space-y-2">
-                    <Label className="text-foreground">Estabilidade de renda</Label>
-                    <Select
-                      value={financialProfile.income_stability ?? ""}
-                      onValueChange={(value) =>
-                        updateField(
-                          "income_stability",
-                          (value || null) as UserFinancialProfile["income_stability"],
-                        )
-                      }
-                    >
-                      <SelectTrigger className="text-muted-foreground">
-                        <SelectValue placeholder="Selecione" />
-                      </SelectTrigger>
-                      <SelectContent>
-                        {INCOME_STABILITY_OPTIONS.map((opt) => (
-                          <SelectItem key={opt} value={opt}>
-                            {INCOME_STABILITY_LABELS[opt]}
-                          </SelectItem>
-                        ))}
-                      </SelectContent>
-                    </Select>
-                  </div>
+                  <OptionCardsGroup<IncomeSourceId>
+                    label="Fonte de Renda"
+                    value={financialProfile.income_stability as IncomeSourceId | "" | null}
+                    options={INCOME_SOURCE_OPTIONS.map((o) => ({
+                      value: o.id,
+                      label: o.label,
+                      description: o.description,
+                    }))}
+                    onChange={(val) => updateField("income_stability", val as any)}
+                    columns="md:grid-cols-2"
+                  />
 
-                  <div className="space-y-2">
+                  <div className="space-y-2 md:max-w-sm">
                     <Label className="text-foreground">Número de dependentes</Label>
                     <Input
                       type="number"
@@ -350,15 +376,10 @@ export default function Profile() {
                       placeholder="0"
                       className="text-muted-foreground"
                       value={financialProfile.dependents ?? 0}
-                      onChange={(e) =>
-                        updateField("dependents", Number(e.target.value) || 0)
-                      }
+                      onChange={(e) => updateField("dependents", Number(e.target.value) || 0)}
                     />
                   </div>
-
-                  <div className="hidden md:block" />
                 </div>
-
 
               </div>
             </div>

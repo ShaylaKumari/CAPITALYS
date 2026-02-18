@@ -35,13 +35,33 @@ export interface Profile {
   updated_at: string;
 }
 
+export type IncomeRange =
+  | "ate_2k"
+  | "2k_4k"
+  | "4k_6k"
+  | "6k_8k"
+  | "8k_12k"
+  | "acima_12k";
+
+export type CreditStatus = "excelente" | "bom" | "regular" | "baixo";
+
+export type RiskProfile = "conservador" | "moderado" | "agressivo";
+
+export type IncomeStability =
+  | "clt"
+  | "servidor_publico"
+  | "pj"
+  | "autonomo"
+  | "estagio"
+  | "nao_informado";
+
 export interface UserFinancialProfile {
   id: string;
   user_id: string;
-  income_range: string | null;
-  credit_status: string | null;
-  risk_profile: 'conservador' | 'moderado' | 'agressivo' | null;
-  income_stability: 'clt' | 'autonomo' | 'pj' | 'nao_informado' | null;
+  income_range: IncomeRange | null;
+  credit_status: CreditStatus | null;
+  risk_profile: RiskProfile | null;
+  income_stability: IncomeStability | null;
   dependents: number;
   created_at: string;
   updated_at: string;
@@ -122,17 +142,35 @@ export const URGENCY_LABELS: Record<string, string> = {
   alta: 'Alta',
 };
 
-export const RISK_PROFILE_LABELS: Record<string, string> = {
-  conservador: 'Conservador',
-  moderado: 'Moderado',
-  agressivo: 'Agressivo',
+export const RISK_PROFILE_LABELS: Record<RiskProfile, string> = {
+  conservador: "Conservador",
+  moderado: "Moderado",
+  agressivo: "Agressivo",
 };
 
-export const INCOME_STABILITY_LABELS: Record<string, string> = {
-  clt: 'CLT',
-  autonomo: 'Autônomo',
-  pj: 'PJ',
-  nao_informado: 'Prefiro não informar',
+export const INCOME_STABILITY_LABELS: Record<IncomeStability, string> = {
+  clt: "CLT",
+  servidor_publico: "Servidor Público",
+  pj: "PJ",
+  autonomo: "Autônomo",
+  estagio: "Estágio",
+  nao_informado: "Não informado",
+};
+
+export const CREDIT_STATUS_LABELS: Record<CreditStatus, string> = {
+  excelente: "Excelente",
+  bom: "Bom",
+  regular: "Regular",
+  baixo: "Baixo",
+};
+
+export const INCOME_RANGE_LABELS: Record<IncomeRange, string> = {
+  ate_2k: "Até R$ 2.000",
+  "2k_4k": "R$ 2.000 – R$ 4.000",
+  "4k_6k": "R$ 4.000 – R$ 6.000",
+  "6k_8k": "R$ 6.000 – R$ 8.000",
+  "8k_12k": "R$ 8.000 – R$ 12.000",
+  acima_12k: "Acima de R$ 12.000",
 };
 
 export const STRATEGY_LABELS: Record<string, string> = {
