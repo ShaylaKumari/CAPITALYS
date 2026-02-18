@@ -7,27 +7,26 @@ export default function AuthCallback() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    let unsub = { subscription: { unsubscribe: () => {} } };
+    let isMounted = true;
 
-    // 1) escuta a mudança de auth (quando a sessão entrar)
-    const { data } = supabase.auth.onAuthStateChange((_event, session) => {
-      if (session) navigate("/dashboard", { replace: true });
-    });
-    unsub = data;
+    (async () => {
+      // 1) troca o "code" da URL por uma sessão (PKCE)
+      const { error } = await supabase.auth.exchangeCodeForSession(window.location.href);
 
-    // 2) tenta ler sessão imediatamente (caso já esteja pronta)
-    supabase.auth.getSession().then(({ data }) => {
-      if (data.session) navigate("/dashboard", { replace: true });
-    });
+      if (!isMounted) return;
 
-    // 3) fallback: se não logou em X tempo, volta pro auth (opcional)
-    const t = window.setTimeout(() => {
-      navigate("/auth", { replace: true });
-    }, 4000);
+      if (error) {
+        console.error("exchangeCodeForSession error:", error);
+        navigate("/auth", { replace: true });
+        return;
+      }
+
+      // 2) sessão criada com sucesso → dashboard
+      navigate("/dashboard", { replace: true });
+    })();
 
     return () => {
-      window.clearTimeout(t);
-      unsub.subscription.unsubscribe();
+      isMounted = false;
     };
   }, [navigate]);
 
